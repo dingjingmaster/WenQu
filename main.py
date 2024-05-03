@@ -19,6 +19,13 @@ def signal_handler(sig, frame):
         sys.exit(0)
 
 
+def loading(lock):
+    status = [
+'⣾',    '⣿'
+    ]
+    pass
+
+
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGHUP, signal_handler)

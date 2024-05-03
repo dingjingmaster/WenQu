@@ -1,6 +1,7 @@
 import sys
 import ollama
 from ollama import Client
+from app.Utils.print import Print
 
 
 class LLMOllama(object):
@@ -27,9 +28,13 @@ class LLMOllama(object):
             }
         ])
 
+    def validate(self) -> bool:
+        res = self.getLocalModelList()
+        return len(res['models']) > 0
+
     def check(self):
-        if None is self.client or '' == self.modelName or None is self.modelName:
-            print("请先调用 setModel() 方法设置要使用的LLM")
+        if None is self.client or '' == self.modelName or None is self.modelName or not self.validate():
+            Print().red("请先 拉取模型 并 调用 setModel() 方法设置要使用的LLM")
             sys.exit(1)
 
 

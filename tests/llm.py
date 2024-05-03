@@ -1,11 +1,12 @@
 #!/bin/env python
 # -*- coding: utf-8 -*-
 
-from app.llm.llm_llama import LLMOllama
+from app.LLMManager.ollama import LLMOllama
 
 if __name__ == "__main__":
     llm = LLMOllama()
     models = llm.getLocalModelList()
+    print(type(models))
     print(models)
 
     llm.setModel("llama3:instruct")
