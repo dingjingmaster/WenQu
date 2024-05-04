@@ -1,0 +1,14 @@
+[Desktop Entry]
+Name=WenQu
+Name[zh_CN]=文曲
+GenericName=WenQu
+Comment=WenQu
+TryExec=/opt/WenQu/main.py
+Exec=bash -c 'poetry -C /opt/WenQu install ; poetry -C /opt/WenQu run /opt/WenQu/main.py'
+Terminal=true
+Type=Application
+Keywords=Application;command;
+Icon=/opt/WenQu/data/WenQu.svg
+Categories=Utility;
+StartupNotify=false
+NoDisplay=false
