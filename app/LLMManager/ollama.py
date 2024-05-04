@@ -2,10 +2,12 @@ import sys
 import ollama
 from ollama import Client
 from app.Utils.print import Print
+from app.LangChain.prompt import Prompt
 
 
 class LLMOllama(object):
     def __init__(self):
+        self.prompt = Prompt()
         self.client = ollama.Client(host="http://127.0.0.1:11434")
         self.modelName = ""
 
@@ -24,14 +26,11 @@ class LLMOllama(object):
 
     def chat(self, question: str):
         self.check()
-        contentStr = f'''
-        请使用中文回答此问题
-        问题: {question}
-        '''
+        questionStr = self.prompt.getDefaultPrompt(question).to_string()
         return self.client.chat(model=self.modelName, messages=[
             {
                 'role': 'user',
-                'content': contentStr
+                'content': questionStr
             }
         ])
 

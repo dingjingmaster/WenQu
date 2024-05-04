@@ -1,4 +1,5 @@
 #!/bin/env python
+# -*- coding: utf-8
 
 from typing import List, Any
 
@@ -48,21 +49,25 @@ class Prompt(object):
     """
 
     def __init__(self):
-        self.defaultPromptStr = '''
-        请使用中文回答问题。
-        问题：```{text}```
+        self._defaultPromptStr = '''
+        作为一个会讲中文的AI，你应该在任何时刻仅使用中文来回答我的问题：
+        
+        问题： ```{text}```
         '''
-        self.defaultPrompt = ChatPromptTemplate.from_template(self.defaultPromptStr)
 
     def getDefaultPrompt(self, question: str) -> PromptValue:
-        return self.defaultPrompt.format_prompt(text=question)
+        prompt = ChatPromptTemplate(
+            messages=[
+                HumanMessagePromptTemplate.from_template(self._defaultPromptStr)
+            ],
+            input_variables=[question])
+        return prompt.format_prompt(text=question)
 
     """
     输入数据的格式：
     @param question: string 要处理的提问
     @return: PromptValue
     """
-
     def getOutputDictPrompt(self, question: str, args: list[tuple]) -> PromptValue | list[BaseMessage]:
         if len(args) <= 0:
             return self.getDefaultPrompt(question)
