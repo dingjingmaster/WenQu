@@ -12,6 +12,13 @@ class LLMOllama(object):
     def setModel(self, modelName: str):
         self.modelName = modelName
 
+    def setDefaultModel(self) -> str:
+        res = self.getLocalModelList()
+        models = res['models']
+        if len(models) > 0:
+            self.setModel(models[0]['name'])
+        return self.modelName
+
     def getLocalModelList(self):
         return self.client.list()
 

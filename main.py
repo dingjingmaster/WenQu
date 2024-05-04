@@ -1,11 +1,13 @@
 #!/bin/env python
 # -*-coding:utf-8-*-
-import _thread
+import re
 import sys
 import time
 import signal
-from app.Utils.print import colorPrint
+import _thread
 import readline
+from app.Utils.print import colorPrint
+from app.LLMManager.ollama import LLMOllama
 
 
 def signal_handler(sig, frame):
@@ -56,16 +58,26 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTSTP, signal_handler)
     signal.signal(signal.SIGABRT, signal_handler)
     print("欢迎使用WenQu!")
+    llm = LLMOllama()
+    llm.setDefaultModel()
     while True:
         line = input("> ")
         if "/bye" == line:
             break
+        elif "/list-model" == line:
+            colorPrint.green(llm.getLocalModelList())
+            continue
+        elif line.startswith("/set-model"):
+            line = re.sub(r"\s+", " ", line)
+            arr = line.split(" ")
+            if len(arr) >= 2:
+                llm.setModel(arr[1])
         elif "" == line:
             continue
         # request
         startWait(gsLock)
-        time.sleep(10)
+        resp = llm.chat(line)
         stopWait(gsLock)
-        colorPrint.green(line)
+        colorPrint.green(resp['message']['content'])
         print('', flush=True)
     exit(0)

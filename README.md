@@ -6,6 +6,18 @@
 
 ### 安装ollama
 
+ollama 用来拉取和运行开源大模型
+
+```shell
+pacman -S ollama
+```
+
+> 包管理器里没有，则去官网手动下载：[https://ollama.com/](https://ollama.com/)
+
+### 安装poetry
+
+peotry 用来管理python项目依赖
+
 ```shell
 pacman -S ollama
 ```
@@ -15,7 +27,15 @@ pacman -S ollama
 #### llama3
 
 ```shell
-ollama run llama3:instruct
+ollama pull llama3:instruct
 ```
 
+> 此项目使用的是 "llama3:instruct"
 
+### 运行本地客户端
+
+```shell
+git pull https://github.com/dingjingmaster/WenQu.git
+cd WenQu
+poetry run ./main.py
+```
