@@ -76,8 +76,8 @@ if __name__ == "__main__":
             continue
         # request
         startWait(gsLock)
-        resp = llm.chat(line)
+        resp = llm.agent(line)
         stopWait(gsLock)
-        colorPrint.green(resp['message']['content'])
+        llm.outputResponse(resp)
         print('', flush=True)
     exit(0)

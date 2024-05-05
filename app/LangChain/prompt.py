@@ -1,8 +1,8 @@
 #!/bin/env python
 # -*- coding: utf-8
-
+import re
 from typing import List, Any
-
+from langchain import hub
 from langchain_core.messages import BaseMessage
 from langchain.output_parsers import ResponseSchema
 from langchain_core.prompt_values import PromptValue
@@ -49,11 +49,43 @@ class Prompt(object):
     """
 
     def __init__(self):
+        # 正常聊天的提示模板
         self._defaultPromptStr = '''
-        作为一个会讲中文的AI，你应该在任何时刻仅使用中文来回答我的问题：
+        As a Chinese speaking AI, you should only use Chinese to answer my questions at any time:
         
-        问题： ```{text}```
+        question: ```{text}```
         '''
+        # 正常聊天使用了Agent的提示模板
+        self._defaultAgentPromptStr = """
+        As a powerful and Chinese-speaking AI, you should answer my questions only in Chinese at all times. \
+        You can answer simple questions or provide in-depth explanations and discussions on complex, broad topics. \
+        For example: when I type text, allow you to have a natural conversation about my input, extract the intent of my question, and complete the answer you think is best. \
+        In this process, you should continue to learn and improve, and use the knowledge and tools you have to provide me with accurate information.
+
+        TOOLS:
+        ------
+        Assistant has access to the following tools:
+        {tools}
+        
+        To use a tool, please use the following format:
+        ```
+        Thought: Do I need to use a tool? Yes
+        Action: the action to take, should be one of [{tool_names}]
+        Action Input: the input to the action
+        Observation: the result of the action
+        ```
+        
+        When you have a response to say to the Human, or if you do not need to use a tool, you MUST use the format:
+        ```
+        Thought: Do I need to use a tool? No
+        Final Answer: [your response here]
+        ```
+        
+        Begin!
+
+        New input: {input}
+        {agent_scratchpad}
+        """
 
     def getDefaultPrompt(self, question: str) -> PromptValue:
         prompt = ChatPromptTemplate(
@@ -62,6 +94,9 @@ class Prompt(object):
             ],
             input_variables=[question])
         return prompt.format_prompt(text=question)
+
+    def getDefaultPromptTemplate(self) -> PromptTemplate:
+        return PromptTemplate.from_template(re.sub(r" +", ' ', self._defaultAgentPromptStr))
 
     """
     输入数据的格式：
