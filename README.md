@@ -39,3 +39,6 @@ git pull https://github.com/dingjingmaster/WenQu.git
 cd WenQu
 poetry run ./main.py
 ```
+
+## 注意
+- 我发现运行ollama的机器上如果不安装显卡，回复结果会很耗时间，且使用LangChain的Agent组件会导致一直做无效循环，无法输出正确结果。我的笔记本预装NVIDIA 1060就可很流畅的跑此模型。

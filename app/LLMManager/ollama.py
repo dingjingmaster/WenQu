@@ -17,7 +17,7 @@ from langchain.agents import AgentExecutor, load_tools, create_react_agent
 
 class LLMOllama(object):
     def __init__(self):
-        langchain.debug = True
+        langchain.debug = False
         agentTools = [
             tool_current_date,
             tool_current_date_time,
