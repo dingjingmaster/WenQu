@@ -7,7 +7,7 @@ import signal
 import _thread
 import readline
 from app.Utils.print import colorPrint
-from app.LLMManager.ollama import LLMOllama
+# from app.LLMManager.ollama import LLMOllama
 
 
 def signal_handler(sig, frame):
@@ -58,26 +58,27 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTSTP, signal_handler)
     signal.signal(signal.SIGABRT, signal_handler)
     print("欢迎使用WenQu!")
-    llm = LLMOllama()
-    llm.setDefaultModel()
+    # llm = LLMOllama()
+    # llm.setDefaultModel()
     while True:
         line = input("> ")
         if "/bye" == line:
             break
         elif "/list-model" == line:
-            colorPrint.green(llm.getLocalModelList())
+            # colorPrint.green(llm.getLocalModelList())
             continue
         elif line.startswith("/set-model"):
             line = re.sub(r"\s+", " ", line)
             arr = line.split(" ")
             if len(arr) >= 2:
-                llm.setModel(arr[1])
+                # llm.setModel(arr[1])
+                pass
         elif "" == line:
             continue
         # request
         startWait(gsLock)
-        resp = llm.agent(line)
+        # resp = llm.agent(line)
         stopWait(gsLock)
-        llm.outputResponse(resp)
+        # llm.outputResponse(resp)
         print('', flush=True)
     exit(0)
