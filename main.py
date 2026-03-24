@@ -10,6 +10,10 @@ import readline
 from app.Utils.print import colorPrint
 from app.LLMManager.llama import LLMOpenAI
 
+from app.LLMManager.common import gIsDebug
+
+gIsDebug = False
+
 
 def signal_handler(sig, frame):
     if sig == signal.SIGINT \

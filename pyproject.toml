@@ -16,6 +16,7 @@ langchain-openai = "^1.1.11"
 langchain-community = "^0.4.1"
 langchain-core = "^1.2.20"
 deepagents = "^0.4.12"
+langgraph-checkpoint-postgres = "^3.0.5"
 
 
 [build-system]

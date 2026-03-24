@@ -1,51 +1,59 @@
-import sys
 from typing import Any
 
 
 import os
 import langchain
+from langchain.agents.middleware import SummarizationMiddleware
+from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.base import BaseCheckpointSaver
 
 from app.Utils.print import colorPrint
 from langchain_openai import ChatOpenAI
 from deepagents import create_deep_agent
-from langchain.messages import AIMessage, SystemMessage, HumanMessage
-from langchain_core.prompts import ChatPromptTemplate
+from langchain.messages import HumanMessage
 
-# from app.LangChain.tools import *
+from langgraph.checkpoint.postgres import PostgresSaver
+
+from app.LLMManager.common import gIsDebug
+
+
+
+DB_URI = "postgresql://postgres@127.0.0.1:5432/wenqu?sslmode=disable"
+
 
 
 class LLMOpenAI(object):
     def __init__(self):
-        self._lastResponse = []
+        langchain.debug = gIsDebug
         os.environ["OPENAI_API_KEY"] = "sk-local"
-        langchain.debug = False
         agentTools = [
             # tool_current_date,
             # tool_current_date_time,
         ]
         tools = []
         self.__agentTools = tools + agentTools
-        self._client = ChatOpenAI(model="localLLM", base_url="http://127.0.0.1:9999/v1", max_retries=60, timeout=120, streaming=True)
+        self._config: RunnableConfig = {"configurable": {"thread_id": "wenqu"}}
+        self._client = ChatOpenAI(model="localLLM", base_url="http://127.0.0.1:9999/v1", max_retries=99, timeout=200, streaming=True)
+        self._middleware = [SummarizationMiddleware(model=self._client, trigger=("tokens", 40960), keep=("messages", 60))]
 
     def chat(self, question: str):
         resp = self._client.invoke(input=question)
         return resp.content
 
     def agent(self, question:str) -> str:
-        ret = "您的提问超出了我的能力范围."
-        agent = create_deep_agent(model=self._client, tools=self.__agentTools)
+        ret = "数据库连接失败."
         try:
             message = []
-            if not self._lastResponse is None:
-                message += self._lastResponse
             message += [
                 HumanMessage(question)
             ]
-            resp = agent.invoke({"messages": message})
-            msg = resp["messages"]
-            resp1 = msg[-1]
-            self._lastResponse += msg
-            ret = resp1.content
+            with PostgresSaver.from_conn_string(DB_URI) as conn:
+                conn.setup()
+                agent = create_deep_agent(model=self._client, tools=self.__agentTools, middleware=self._middleware, checkpointer=conn)
+                resp = agent.invoke({"messages": message}, config=self._config, timeout=-1)
+                msg = resp["messages"]
+                resp1 = msg[-1]
+                ret = resp1.content
         except Exception as e:
             ret = '输出错误: ' + str(e)
         return ret
