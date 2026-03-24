@@ -8,6 +8,7 @@ import langchain
 from app.Utils.print import colorPrint
 from langchain_openai import ChatOpenAI
 from deepagents import create_deep_agent
+from langchain.messages import AIMessage, SystemMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 
 # from app.LangChain.tools import *
@@ -15,6 +16,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 class LLMOpenAI(object):
     def __init__(self):
+        self._lastResponse = []
         os.environ["OPENAI_API_KEY"] = "sk-local"
         langchain.debug = False
         agentTools = [
@@ -31,20 +33,19 @@ class LLMOpenAI(object):
 
     def agent(self, question:str) -> str:
         ret = "您的提问超出了我的能力范围."
-        agent = create_deep_agent(model=self._client, tools=self.__agentTools, system_prompt="请用中文回答")
+        agent = create_deep_agent(model=self._client, tools=self.__agentTools)
         try:
-            resp = agent.invoke(
-                {
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": question,
-                        }
-                    ]
-                }
-            )
+            message = []
+            if not self._lastResponse is None:
+                message += self._lastResponse
+            message += [
+                HumanMessage(question)
+            ]
+            resp = agent.invoke({"messages": message})
             msg = resp["messages"]
-            ret = msg[1].content
+            resp1 = msg[-1]
+            self._lastResponse += msg
+            ret = resp1.content
         except Exception as e:
             ret = '输出错误: ' + str(e)
         return ret
