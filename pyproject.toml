@@ -11,6 +11,11 @@ python = "^3.11"
 colorama = "^0.4.6"
 numexpr = "^2.10.0"
 langchainhub = "^0.1.15"
+langchain = "^1.2.13"
+langchain-openai = "^1.1.11"
+langchain-community = "^0.4.1"
+langchain-core = "^1.2.20"
+deepagents = "^0.4.12"
 
 
 [build-system]
