@@ -1,11 +1,14 @@
 #!/bin/env python
 # -*-coding:utf-8-*-
-import re
 import sys
 import time
 import signal
 import _thread
 import readline
+
+from PyQt6.QtWidgets import QApplication
+
+from app.Gui.gui import LangChainGUI
 
 from app.Utils.print import colorPrint
 from app.LLMManager.llama import LLMOpenAI
@@ -14,6 +17,9 @@ from app.LLMManager.common import gIsDebug
 
 gIsDebug = False
 
+
+def signal_exit(sig, frame):
+    sys.exit(0)
 
 def signal_handler(sig, frame):
     if sig == signal.SIGINT \
@@ -56,12 +62,18 @@ def stopWait(lock):
 
 if __name__ == "__main__":
     gsLock = [True, '正在请求...']
+    signal.signal(signal.SIGTERM, signal_exit)
+    signal.signal(signal.SIGQUIT, signal_exit)
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGHUP, signal_handler)
-    #:]\signal.signal(signal.SIGTERM, signal_handler)
-    signal.signal(signal.SIGQUIT, signal_handler)
     signal.signal(signal.SIGTSTP, signal_handler)
     signal.signal(signal.SIGABRT, signal_handler)
+
+    app = QApplication(sys.argv)
+    gui = LangChainGUI()
+
+    gui.show()
+    '''
     print("欢迎使用WenQu!")
     llm = LLMOpenAI()
     while True:
@@ -77,4 +89,5 @@ if __name__ == "__main__":
         stopWait(gsLock)
         llm.outputResponse(resp)
         print('', flush=True)
-    exit(0)
+    '''
+    exit(app.exec())
