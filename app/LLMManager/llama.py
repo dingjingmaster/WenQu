@@ -2,6 +2,7 @@ from typing import Any
 
 
 import os
+import datetime
 import langchain
 
 from langchain.agents.middleware import SummarizationMiddleware
@@ -40,7 +41,8 @@ class LLMOpenAI(object):
             "delete_file": True,
             "read_file": False,
         }
-        self._config: RunnableConfig = {"configurable": {"thread_id": "wenqu"}}
+        _key = str(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+        self._config: RunnableConfig = {"configurable": {"thread_id": _key}}
         self._client = ChatOpenAI(model="localLLM", base_url="http://127.0.0.1:9999/v1", max_retries=99, timeout=200, streaming=True)
         self._middleware = [
             SummarizationMiddleware(model=self._client, trigger=("tokens", 40960), keep=("messages", 60)),
@@ -63,7 +65,7 @@ class LLMOpenAI(object):
                                           backend=gFs,
                                           tools=self.__agentTools,
                                           interrupt_on=self.__interruptTool,
-                                          middleware=self._middleware, checkpointer=None, )
+                                          middleware=self._middleware, checkpointer=conn, )
                 resp = agent.invoke({"messages": message}, config=self._config, timeout=-1)
                 msg = resp["messages"]
                 resp1 = msg[-1]

@@ -40,7 +40,6 @@ class LLMThread(QThread):
         asyncio.run(runLLM())
         '''
         res = llm.agent(self.prompt)
-        print(res)
         self.sendToken.emit(res)
 
 

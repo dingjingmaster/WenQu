@@ -5,4 +5,5 @@
 ## 环境搭建
 
 - [x] llama-cpp 运行大模型
-- [x] PostgreSQL 为模型提供持久记忆
+- [x] PostgreSQL 为模型提供持久记忆(目前仅保存上下文...)
+- [x] 增加Qt界面支持
