@@ -63,7 +63,7 @@ class LLMOpenAI(object):
                                           backend=gFs,
                                           tools=self.__agentTools,
                                           interrupt_on=self.__interruptTool,
-                                          middleware=self._middleware, checkpointer=conn, )
+                                          middleware=self._middleware, checkpointer=None, )
                 resp = agent.invoke({"messages": message}, config=self._config, timeout=-1)
                 msg = resp["messages"]
                 resp1 = msg[-1]
@@ -71,6 +71,27 @@ class LLMOpenAI(object):
         except Exception as e:
             ret = '输出错误: ' + str(e)
         return ret
+
+    # 目前不支持流式输出
+    # async def agentAsync(self, question:str):
+    #     try:
+    #         message = []
+    #         message += [
+    #             HumanMessage(question)
+    #         ]
+    #         with PostgresSaver.from_conn_string(DB_URI) as conn:
+    #             conn.setup()
+    #             agent = create_deep_agent(model=self._client,
+    #                                       backend=gFs,
+    #                                       tools=self.__agentTools,
+    #                                       interrupt_on=self.__interruptTool,
+    #                                       middleware=self._middleware, checkpointer=conn, )
+    #             print(question)
+    #             async for chunk in agent.astream(question, config=self._config, stream_mode="values"):
+    #                 print("-->" + chunk.content, flush=True)
+    #                 yield str(chunk)
+    #     except Exception as e:
+    #         yield str(e)
 
     def outputResponse(self, resp: Any)->bool:
         if str == type(resp):
