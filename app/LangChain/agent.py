@@ -1,24 +1,32 @@
 #!/bin/env python
 # -*- coding: utf-8
 
-# import ollama
-# from app.Utils.print import colorPrint
-# from langchain.agents import AgentType
-# from langchain.python import PythonREPL
-# from langchain.chat_models import ChatOllama
-# from langchain.agents import load_tools, initialize_agent
-# from langchain.agents.agent_toolkits import create_python_agent
-#
-#
-# class Agent(object):
-#     def __init__(self):
-#         # self.__llm = ollama.Client(host="http://127.0.0.1:11434")
-#         self.__llm = ChatOllama(temperature=0)
-#         self.__tools = load_tools(["llm-math", "wikipedia"], llm=self.__llm)
-#         self.__agent = initialize_agent(
-#             tools=self.__tools,
-#             llm=self.__llm,
-#             agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
-#             handle_parsing_errors=True,
-#             verbose=True)
-#     pass
+class LlamaDeepAgent:
+    def __init__(self, llm, tools):
+        self._llm = llm
+        self._tools = tools
+
+    def invoke(self, query: str):
+        prompt = f"""你是一个AI代理，可以使用工具来回答问题。
+
+请严格遵循以下规则：
+
+1. 如果需要使用工具，使用格式：
+Thought: ...
+Action: 工具名
+Action Input: ...
+Observation: 工具返回结果
+...（可以重复多次）
+Final Answer: 最终答案
+
+2. 如果不需要使用工具，直接输出：
+Thought: ...
+Final Answer: 最终答案
+
+⚠️ 注意：
+- 不要在不需要工具时输出 Action
+- 不要编造工具调用
+
+Question: {query}
+        """
+        return self._llm.invoke(prompt)
