@@ -1,10 +1,13 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 import os
 from typing import List, Optional
 import uvicorn
+import json
+import asyncio
+from datetime import datetime
 
 # 导入配置
 from src.config import config
@@ -20,6 +23,28 @@ app = FastAPI(title="WenQu API", description="WenQu 本地 Agent 系统 API")
 static_path = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(static_path):
     app.mount("/static", StaticFiles(directory=static_path), name="static")
+
+# WebSocket 连接管理
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except:
+                pass
+
+manager = ConnectionManager()
 
 # 初始化 Agent
 agent = WenQuAgent()
@@ -47,7 +72,7 @@ async def root():
     index_path = os.path.join(static_path, "index.html")
     if os.path.exists(index_path):
         return FileResponse(index_path)
-    return {"message": "欢迎使用 WenQu API", "version": "0.1.0", "docs": "/docs"}
+    return {"message": "欢迎使用 WenQu API", "version": "0.1.0"}
 
 @app.get("/health")
 async def health_check():
@@ -72,7 +97,7 @@ async def analyze_request(request: UserRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/execute")
-async def execute_task(task_content: str, context: Optional[str] = ""):
+async def execute_task(task_content: str, context: str = ""):
     """
     执行具体任务
     
@@ -84,7 +109,7 @@ async def execute_task(task_content: str, context: Optional[str] = ""):
         执行结果
     """
     try:
-        result = agent.execute_task(task_content, context)
+        result = agent.execute_task(task_content, context or "")
         return {"result": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -126,6 +151,101 @@ async def upload_document(file_path: str):
             filename=os.path.basename(file_path)
         )
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.websocket("/ws/agent")
+async def websocket_endpoint(websocket: WebSocket):
+    """
+    WebSocket 连接端点，用于实时推送 Agent 执行状态
+    """
+    await manager.connect(websocket)
+    try:
+        # 发送连接成功消息
+        await websocket.send_json({
+            "type": "connected",
+            "message": "WebSocket 连接成功",
+            "timestamp": datetime.now().isoformat()
+        })
+        
+        # 保持连接
+        while True:
+            try:
+                # 接收客户端消息（如果需要）
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=30)
+                # 可以处理客户端发来的消息
+            except asyncio.TimeoutError:
+                # 发送心跳
+                await websocket.send_json({
+                    "type": "heartbeat",
+                    "timestamp": datetime.now().isoformat()
+                })
+            except WebSocketDisconnect:
+                break
+    except Exception as e:
+        pass
+    finally:
+        manager.disconnect(websocket)
+
+@app.post("/api/agent/execute")
+async def agent_execute(
+    query: str = Form(...),
+    files: Optional[List[UploadFile]] = File(None)
+):
+    """
+    Agent 执行接口，支持文件上传
+    
+    Args:
+        query: 用户查询
+        files: 上传的文件列表
+        
+    Returns:
+        执行结果
+    """
+    try:
+        # 发送开始消息
+        await manager.broadcast({
+            "type": "log",
+            "content": f"开始处理查询：{query[:50]}...",
+            "timestamp": datetime.now().isoformat()
+        })
+        
+        # 处理上传的文件
+        file_paths = []
+        if files:
+            upload_dir = os.path.join(os.path.dirname(__file__), "uploads")
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            for file in files:
+                if file.filename:
+                    file_path = os.path.join(upload_dir, file.filename)
+                    with open(file_path, "wb") as f:
+                        content = await file.read()
+                        f.write(content)
+                    file_paths.append(file_path)
+            
+            await manager.broadcast({
+                "type": "log",
+                "content": f"已上传 {len(file_paths)} 个文件",
+                "timestamp": datetime.now().isoformat()
+            })
+        
+        # 执行 Agent 任务
+        result = agent.run(query)
+        
+        # 发送结果
+        await manager.broadcast({
+            "type": "result",
+            "content": json.dumps(result, ensure_ascii=False, indent=2),
+            "timestamp": datetime.now().isoformat()
+        })
+        
+        return {"success": True, "message": "任务已提交"}
+    except Exception as e:
+        await manager.broadcast({
+            "type": "error",
+            "content": str(e),
+            "timestamp": datetime.now().isoformat()
+        })
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/rag/query")

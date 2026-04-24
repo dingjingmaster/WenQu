@@ -1,13 +1,22 @@
 #!/bin/bash
 
 # WenQu 服务测试脚本
+# 该脚本应放在 bin/ 目录下
+
+# 获取脚本所在目录的绝对路径
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# 项目根目录是 bin/ 的父目录
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# 切换到项目根目录
+cd "$PROJECT_ROOT"
+
+SERVER_URL="http://localhost:8000"
 
 echo "======================================"
 echo "WenQu 服务测试"
 echo "======================================"
 echo ""
-
-SERVER_URL="http://localhost:8000"
 
 # 测试健康检查
 echo "1. 测试健康检查接口..."

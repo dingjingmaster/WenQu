@@ -4,300 +4,125 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WenQu - 本地 AI Agent 系统</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        
-        .container {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            max-width: 800px;
-            width: 100%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-        
-        h1 {
-            color: #667eea;
-            margin-bottom: 10px;
-            font-size: 2.5em;
-            text-align: center;
-        }
-        
-        .subtitle {
-            color: #666;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 1.1em;
-        }
-        
-        .status {
-            background: #f0fdf4;
-            border-left: 4px solid #22c55e;
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-        }
-        
-        .status h2 {
-            color: #16a34a;
-            font-size: 1.2em;
-            margin-bottom: 5px;
-        }
-        
-        .status p {
-            color: #15803d;
-        }
-        
-        .input-section {
-            margin-bottom: 30px;
-        }
-        
-        textarea {
-            width: 100%;
-            min-height: 120px;
-            padding: 15px;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 1em;
-            font-family: inherit;
-            resize: vertical;
-            transition: border-color 0.3s;
-        }
-        
-        textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 10px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin-right: 10px;
-            margin-top: 10px;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .btn:active {
-            transform: translateY(0);
-        }
-        
-        .result-section {
-            background: #f9fafb;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-            display: none;
-        }
-        
-        .result-section.show {
-            display: block;
-        }
-        
-        .result-section h3 {
-            color: #667eea;
-            margin-bottom: 15px;
-        }
-        
-        .todo-list {
-            list-style: none;
-        }
-        
-        .todo-item {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            border-left: 4px solid #667eea;
-        }
-        
-        .todo-item strong {
-            color: #667eea;
-        }
-        
-        .api-links {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px solid #e5e7eb;
-            text-align: center;
-        }
-        
-        .api-links a {
-            color: #667eea;
-            text-decoration: none;
-            margin: 0 10px;
-            padding: 8px 15px;
-            border: 2px solid #667eea;
-            border-radius: 8px;
-            transition: all 0.3s;
-            display: inline-block;
-        }
-        
-        .api-links a:hover {
-            background: #667eea;
-            color: white;
-        }
-        
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .loading.show {
-            display: block;
-        }
-        
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    <link rel="stylesheet" href="/static/assets/styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>🤖 WenQu</h1>
-        <p class="subtitle">本地 AI Agent 系统 - 智能需求分析与任务规划</p>
-        
-        <div class="status">
-            <h2>✅ 服务运行正常</h2>
-            <p>API 地址：<a href="/docs" target="_blank">http://localhost:8000/docs</a></p>
+    <!-- 粒子背景 -->
+    <div id="particles-js"></div>
+    
+    <div class="main-container">
+        <!-- Logo 区域 -->
+        <div class="logo-section">
+            <h1 class="logo-text">
+                <span class="logo-letter" data-letter="W" style="color: #4285f4;">W</span>
+                <span class="logo-letter" data-letter="e" style="color: #ea4335;">e</span>
+                <span class="logo-letter" data-letter="n" style="color: #fbbc05;">n</span>
+                <span class="logo-letter" data-letter="Q" style="color: #4285f4;">Q</span>
+                <span class="logo-letter" data-letter="u" style="color: #34a853;">u</span>
+            </h1>
+            <p class="logo-subtitle fade-in">本地 AI Agent 系统</p>
         </div>
-        
-        <div class="input-section">
-            <textarea id="userInput" placeholder="请输入你的需求，例如：&#10;帮我创建一个简单的 Python Web 应用，需要实现用户登录功能..."></textarea>
+
+        <!-- 主要内容区域 -->
+        <div class="content-section slide-up">
+            <!-- 用户输入框 -->
+            <div class="input-wrapper">
+                <textarea 
+                    id="userInput" 
+                    class="main-input"
+                    placeholder="请输入您的问题或请求..."
+                    rows="3"
+                ></textarea>
+                <div class="input-glow"></div>
+            </div>
+
+            <!-- 文件上传和执行按钮（水平布局） -->
+            <div class="action-section">
+                <div class="button-row">
+                    <input 
+                        type="file" 
+                        id="fileInput" 
+                        multiple 
+                        style="display: none;"
+                        onchange="handleFileSelect(event)"
+                    />
+                    <button 
+                        id="uploadBtn" 
+                        class="upload-button"
+                        onclick="document.getElementById('fileInput').click()"
+                    >
+                        <span class="button-icon">📁</span>
+                        <span class="button-text">选择文件/文件夹</span>
+                    </button>
+                    
+                    <button 
+                        id="executeBtn" 
+                        class="execute-button"
+                        onclick="handleExecute()"
+                    >
+                        <span id="executeBtnText" class="btn-text">🚀 执行</span>
+                        <span id="executeBtnLoader" class="loader"></span>
+                        <div class="btn-particles"></div>
+                    </button>
+                </div>
+                
+                <!-- 已选文件列表 -->
+                <div id="fileList" class="file-list"></div>
+            </div>
+        </div>
+
+        <!-- 模型思考过程显示区域 -->
+        <div id="thoughtSection" class="thought-section" style="display: none;">
+            <div class="thought-header" onclick="toggleThoughtCollapse()">
+                <span id="thoughtArrow" class="arrow">▶</span>
+                <span>💭 模型思考过程</span>
+                <span id="thoughtCount" class="thought-count">0 条思考</span>
+            </div>
             
-            <button class="btn" onclick="analyzeRequest()">🚀 分析需求</button>
-            <button class="btn" onclick="clearInput()">🗑️ 清空</button>
+            <div id="thoughtContent" class="thought-content">
+                <div id="thoughtMessages" class="thought-messages"></div>
+            </div>
         </div>
-        
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>正在分析您的需求，请稍候...</p>
+
+        <!-- 执行过程显示区域 -->
+        <div id="processSection" class="process-section" style="display: none;">
+            <div class="process-header" onclick="toggleProcessCollapse()">
+                <span id="processArrow" class="arrow">▶</span>
+                <span>执行过程</span>
+                <span id="processCount" class="process-count">0 条消息</span>
+            </div>
+            
+            <div id="processContent" class="process-content">
+                <div id="processMessages"></div>
+            </div>
         </div>
-        
-        <div class="result-section" id="result">
-            <h3>📋 分析结果</h3>
-            <div id="resultContent"></div>
+
+        <!-- 结果展示区域 -->
+        <div id="resultSection" class="result-section" style="display: none;">
+            <div class="result-header" onclick="toggleResultCollapse()">
+                <span id="resultArrow" class="arrow">▶</span>
+                <span>执行结果</span>
+            </div>
+            
+            <div id="resultContent" class="result-content">
+                <div id="resultBody" class="markdown-body"></div>
+                <button class="copy-button" onclick="copyResult()">
+                    📋 复制结果
+                </button>
+            </div>
         </div>
-        
-        <div class="api-links">
-            <a href="/docs" target="_blank">📖 API 文档</a>
-            <a href="/health" target="_blank">❤️ 健康检查</a>
-            <a href="https://github.com/ggerganov/llama.cpp" target="_blank">🦙 llama.cpp</a>
+
+        <!-- WebSocket 连接状态指示器 -->
+        <div id="statusIndicator" class="status-indicator disconnected">
+            <span class="status-dot"></span>
+            <span id="statusText" class="status-text">未连接</span>
+            <div class="status-ring"></div>
         </div>
     </div>
-    
-    <script>
-        async function analyzeRequest() {
-            const userInput = document.getElementById('userInput').value.trim();
-            
-            if (!userInput) {
-                alert('请输入需求内容');
-                return;
-            }
-            
-            // 显示加载动画
-            document.getElementById('loading').classList.add('show');
-            document.getElementById('result').classList.remove('show');
-            
-            try {
-                const response = await fetch('/api/analyze', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        user_input: userInput,
-                        context: ''
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const result = await response.json();
-                
-                // 显示结果
-                const resultContent = document.getElementById('resultContent');
-                let html = '';
-                
-                if (result.key_points && result.key_points.length > 0) {
-                    html += '<div class="todo-item"><strong>🎯 关键需求：</strong><ul>';
-                    result.key_points.forEach(point => {
-                        html += `<li>${point}</li>`;
-                    });
-                    html += '</ul></div>';
-                }
-                
-                if (result.unclear_points && result.unclear_points.length > 0) {
-                    html += '<div class="todo-item"><strong>❓ 不清晰点：</strong><ul>';
-                    result.unclear_points.forEach(point => {
-                        html += `<li>${point}</li>`;
-                    });
-                    html += '</ul></div>';
-                }
-                
-                if (result.todos && result.todos.length > 0) {
-                    html += '<div class="todo-item"><strong>📝 TODO 列表：</strong><ul class="todo-list">';
-                    result.todos.forEach((todo, index) => {
-                        html += `<li class="todo-item">
-                            <strong>任务 ${index + 1}:</strong> ${todo.task || todo}
-                            ${todo.priority ? `<br><small>优先级：${todo.priority}</small>` : ''}
-                        </li>`;
-                    });
-                    html += '</ul></div>';
-                }
-                
-                resultContent.innerHTML = html;
-                document.getElementById('result').classList.add('show');
-                
-            } catch (error) {
-                alert('分析失败：' + error.message);
-                console.error('Error:', error);
-            } finally {
-                document.getElementById('loading').classList.remove('show');
-            }
-        }
-        
-        function clearInput() {
-            document.getElementById('userInput').value = '';
-            document.getElementById('result').classList.remove('show');
-        }
-    </script>
+
+    <!-- 动画库 -->
+    <script src="/static/assets/particles.min.js"></script>
+    <script src="/static/assets/anime.min.js"></script>
+    <script src="/static/assets/app.js"></script>
 </body>
 </html>

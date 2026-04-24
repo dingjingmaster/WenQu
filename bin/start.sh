@@ -1,11 +1,20 @@
 #!/bin/bash
 
 # WenQu 项目启动脚本
+# 该脚本应放在 bin/ 目录下
+
+# 获取脚本所在目录的绝对路径
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# 项目根目录是 bin/ 的父目录
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 echo "======================================"
 echo "WenQu 本地 Agent 系统"
 echo "======================================"
 echo ""
+
+# 切换到项目根目录
+cd "$PROJECT_ROOT"
 
 # 检查虚拟环境
 if [ ! -d ".venv" ]; then
@@ -52,5 +61,4 @@ echo "API 文档：http://localhost:8000/docs"
 echo ""
 
 # 使用 uvicorn 启动，支持自动重载和更好的性能
-cd /data/code/WenQu
 uvicorn src.server.main:app --host 0.0.0.0 --port 8000
