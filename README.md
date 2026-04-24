@@ -11,6 +11,8 @@
 - 🗄️ **持久化存储**: PostgreSQL 向量数据库存储文档和上下文
 - 🔧 **灵活配置**: 统一的配置文件管理所有参数
 - 🚀 **简单易用**: 一键启动脚本，快速部署
+- ✨ **炫酷 UI**: 粒子背景、交互动画、纯 HTML/CSS/JS 实现（零依赖）
+- 💭 **思考可视化**: 实时显示模型思考过程
 
 ## 架构
 
@@ -161,9 +163,22 @@ WenQu/
 │   ├── rag/            # RAG 层
 │   ├── inference/      # 推理层
 │   ├── server/         # 服务器
+│   │   ├── static/     # UI 静态文件
+│   │   │   ├── assets/ # CSS 和 JavaScript 文件
+│   │   │   │   ├── styles.css
+│   │   │   │   ├── app.js
+│   │   │   │   ├── particles.min.js  # 粒子背景动画库
+│   │   │   │   └── anime.min.js      # 高级动画库
+│   │   │   └── index.html
+│   │   ├── uploads/    # 上传文件目录
+│   │   └── main.py     # FastAPI 服务器
 │   └── config.py       # 配置管理
-├── tests/              # 测试目录
 ├── docs/               # 文档目录
+├── bin/                # 脚本工具目录
+│   ├── start.sh        # 启动脚本
+│   ├── test.sh         # 服务测试脚本
+│   └── test_ui.sh      # UI 测试脚本
+├── tests/              # 测试目录
 ├── start.sh            # 启动脚本
 ├── test.sh             # 测试脚本
 ├── RUNNING.md          # 运行说明
@@ -191,7 +206,17 @@ WenQu/
 ### 服务器 (`src/server/`)
 - FastAPI Web 服务
 - RESTful API
+- WebSocket 实时通信
 - 错误处理
+- 静态文件服务（HTML/CSS/JS）
+
+### UI 层 (`src/server/static/`)
+- 纯 HTML5/CSS3/JavaScript 实现
+- 粒子背景动画（particles.js）
+- 高级动画引擎（anime.js）
+- Google 风格界面设计
+- 响应式布局
+- 零依赖（不使用 Vue/React/npm）
 
 ## 配置说明
 
