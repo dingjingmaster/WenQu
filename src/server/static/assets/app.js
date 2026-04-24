@@ -325,39 +325,42 @@ function addThoughtMessage(source, content) {
     
     const messagesDiv = document.getElementById('thoughtMessages');
     const messageDiv = document.createElement('div');
-    messageDiv.className = 'thought-message';
+    messageDiv.className = 'thought-item';
     messageDiv.innerHTML = `
-        <div class="thought-header">
-            <strong>💭 ${source}</strong>
-            <span class="thought-time" style="margin-left: auto; font-size: 11px; opacity: 0.7;">${time}</span>
-        </div>
-        <div class="thought-body" style="margin-top: 6px;">${escapeHtml(content)}</div>
+        <span class="thought-icon">💭</span>
+        <span class="thought-text">${escapeHtml(content)}</span>
     `;
     messagesDiv.appendChild(messageDiv);
     
     // 消息进入动画
-    anime({
-        targets: messageDiv,
-        translateY: [-30, 0],
-        opacity: [0, 1],
-        duration: 400,
-        easing: 'easeOutQuad'
-    });
+    if (typeof anime !== 'undefined') {
+        anime({
+            targets: messageDiv,
+            translateX: [-20, 0],
+            opacity: [0, 1],
+            duration: 300,
+            easing: 'easeOutQuad'
+        });
+    }
     
     // 自动滚动到底部
     const thoughtContent = document.getElementById('thoughtContent');
-    thoughtContent.scrollTop = thoughtContent.scrollHeight;
+    if (thoughtContent) {
+        thoughtContent.scrollTop = thoughtContent.scrollHeight;
+    }
     
     // 显示思考面板
     const thoughtSection = document.getElementById('thoughtSection');
-    thoughtSection.style.display = 'block';
+    if (thoughtSection) {
+        thoughtSection.style.display = 'block';
+    }
     
     // 更新思考计数
     updateThoughtCount();
     
     // 展开面板
     const thoughtArrow = document.getElementById('thoughtArrow');
-    if (!thoughtArrow.classList.contains('rotated')) {
+    if (thoughtArrow && !thoughtArrow.classList.contains('rotated')) {
         toggleThoughtCollapse();
     }
 }
@@ -413,29 +416,17 @@ function addProcessMessage(source, content, type) {
 // 更新思考计数
 function updateThoughtCount() {
     const countSpan = document.getElementById('thoughtCount');
-    countSpan.textContent = `${thoughtMessages.length} 条思考`;
-    
-    // 数字滚动动画
-    anime({
-        targets: countSpan,
-        scale: [1.3, 1],
-        duration: 300,
-        easing: 'easeOutQuad'
-    });
+    if (countSpan) {
+        countSpan.textContent = `${thoughtMessages.length} 条`;
+    }
 }
 
 // 更新消息计数
 function updateProcessCount() {
     const countSpan = document.getElementById('processCount');
-    countSpan.textContent = `${processMessages.length} 条消息`;
-    
-    // 数字滚动动画
-    anime({
-        targets: countSpan,
-        scale: [1.3, 1],
-        duration: 300,
-        easing: 'easeOutQuad'
-    });
+    if (countSpan) {
+        countSpan.textContent = `${processMessages.length} 条`;
+    }
 }
 
 // 处理文件选择
@@ -642,12 +633,6 @@ function showResult(content) {
     
     resultSection.style.display = 'block';
     
-    // 展开面板
-    const resultArrow = document.getElementById('resultArrow');
-    if (!resultArrow.classList.contains('rotated')) {
-        toggleResultCollapse();
-    }
-    
     // 滚动到结果区域
     setTimeout(() => {
         resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -714,12 +699,18 @@ function toggleThoughtCollapse() {
     const thoughtContent = document.getElementById('thoughtContent');
     const thoughtArrow = document.getElementById('thoughtArrow');
     
-    if (thoughtContent.style.maxHeight && thoughtContent.style.maxHeight !== 'none') {
-        thoughtContent.style.maxHeight = '0';
-        thoughtArrow.classList.remove('rotated');
-    } else {
-        thoughtContent.style.maxHeight = thoughtContent.scrollHeight + 'px';
+    if (!thoughtContent || !thoughtArrow) return;
+    
+    if (thoughtContent.classList.contains('collapsed')) {
+        thoughtContent.classList.remove('collapsed');
         thoughtArrow.classList.add('rotated');
+        setTimeout(() => {
+            thoughtContent.style.maxHeight = thoughtContent.scrollHeight + 'px';
+        }, 10);
+    } else {
+        thoughtContent.style.maxHeight = '0';
+        thoughtContent.classList.add('collapsed');
+        thoughtArrow.classList.remove('rotated');
     }
 }
 
@@ -728,26 +719,18 @@ function toggleProcessCollapse() {
     const processContent = document.getElementById('processContent');
     const processArrow = document.getElementById('processArrow');
     
-    if (processContent.style.maxHeight && processContent.style.maxHeight !== 'none') {
-        processContent.style.maxHeight = '0';
-        processArrow.classList.remove('rotated');
-    } else {
-        processContent.style.maxHeight = processContent.scrollHeight + 'px';
-        processArrow.classList.add('rotated');
-    }
-}
-
-// 折叠/展开结果面板
-function toggleResultCollapse() {
-    const resultContent = document.getElementById('resultContent');
-    const resultArrow = document.getElementById('resultArrow');
+    if (!processContent || !processArrow) return;
     
-    if (resultContent.style.maxHeight && resultContent.style.maxHeight !== 'none') {
-        resultContent.style.maxHeight = '0';
-        resultArrow.classList.remove('rotated');
+    if (processContent.classList.contains('collapsed')) {
+        processContent.classList.remove('collapsed');
+        processArrow.classList.add('rotated');
+        setTimeout(() => {
+            processContent.style.maxHeight = processContent.scrollHeight + 'px';
+        }, 10);
     } else {
-        resultContent.style.maxHeight = resultContent.scrollHeight + 'px';
-        resultArrow.classList.add('rotated');
+        processContent.style.maxHeight = '0';
+        processContent.classList.add('collapsed');
+        processArrow.classList.remove('rotated');
     }
 }
 
