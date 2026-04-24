@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>测试 anime.js</title>
+</head>
+<body>
+    <h1>测试 anime.js</h1>
+    <div id="test" style="width: 100px; height: 100px; background: red;"></div>
+    <p id="result">等待测试...</p>
+    
+    <script src="/static/assets/anime.min.js?v=4"></script>
+    <script>
+        const result = document.getElementById('result');
+        
+        if (typeof anime === 'undefined') {
+            result.textContent = '❌ anime.js 未加载！';
+            result.style.color = 'red';
+            console.error('anime.js 未加载');
+        } else {
+            result.textContent = '✅ anime.js 加载成功！版本：' + (anime.version || 'unknown');
+            result.style.color = 'green';
+            console.log('anime.js 加载成功，版本:', anime.version);
+            
+            // 测试动画
+            anime({
+                targets: '#test',
+                translateX: 200,
+                duration: 1000,
+                easing: 'easeOutQuad'
+            });
+        }
+    </script>
+</body>
+</html>

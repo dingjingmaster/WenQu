@@ -121,8 +121,21 @@
     </div>
 
     <!-- 动画库 -->
-    <script src="/static/assets/particles.min.js"></script>
-    <script src="/static/assets/anime.min.js"></script>
-    <script src="/static/assets/app.js"></script>
+    <script src="/static/assets/particles.min.js?t=202604241915"></script>
+    <script src="/static/assets/anime.min.js?t=202604241915"></script>
+    <script>
+        console.log('检查动画库加载...');
+        if (typeof anime === 'undefined') {
+            console.error('❌ anime.js 未加载');
+        } else {
+            console.log('✅ anime.js 已加载，版本:', anime.version);
+        }
+        if (typeof particlesJS === 'undefined') {
+            console.warn('⚠️ particles.js 未加载');
+        } else {
+            console.log('✅ particles.js 已加载');
+        }
+    </script>
+    <script src="/static/assets/app.js?t=202604241915"></script>
 </body>
 </html>

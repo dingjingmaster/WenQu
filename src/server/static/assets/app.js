@@ -1,4 +1,8 @@
 // 全局状态
+console.log('=== app.js 开始加载 ===');
+console.log('anime.js 状态:', typeof anime !== 'undefined' ? '已加载' : '未加载');
+console.log('particles.js 状态:', typeof particlesJS !== 'undefined' ? '已加载' : '未加载');
+
 let selectedFiles = [];
 let ws = null;
 let processMessages = [];
@@ -7,18 +11,42 @@ let resultText = '';
 
 // 初始化动画
 function initAnimations() {
-    // 初始化粒子背景
-    initParticles();
+    // 检查 anime.js 是否加载
+    if (typeof anime === 'undefined') {
+        console.warn('anime.js 未加载，跳过所有动画初始化');
+        return;
+    }
     
-    // Logo 字母动画
-    initLogoAnimation();
+    try {
+        // 初始化粒子背景
+        initParticles();
+    } catch (e) {
+        console.warn('粒子背景初始化失败:', e);
+    }
     
-    // 输入框聚焦动画
-    initInputAnimation();
+    try {
+        // Logo 字母动画
+        initLogoAnimation();
+    } catch (e) {
+        console.warn('Logo 动画初始化失败:', e);
+    }
+    
+    try {
+        // 输入框聚焦动画
+        initInputAnimation();
+    } catch (e) {
+        console.warn('输入框动画初始化失败:', e);
+    }
 }
 
 // 初始化粒子背景
 function initParticles() {
+    // 检查 particlesJS 是否已加载
+    if (typeof particlesJS === 'undefined') {
+        console.warn('particles.js 未加载，跳过粒子背景初始化');
+        return;
+    }
+    
     particlesJS('particles-js', {
         particles: {
             number: {
@@ -135,7 +163,7 @@ function initLogoAnimation() {
             opacity: [0, 1],
             delay: index * 100,
             duration: 800,
-            easing: 'easeOutElastic(1, .8)'
+            easing: 'easeOutQuart'
         });
         
         // 悬停动画
@@ -186,14 +214,23 @@ function initInputAnimation() {
 
 // WebSocket 连接
 function connectWebSocket() {
+    console.log('=== connectWebSocket 被调用 ===');
+    console.log('当前状态:', ws ? '已有连接' : '新连接');
+    
     updateStatus('connecting');
     
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws/agent`;
     
+    console.log('WebSocket URL:', wsUrl);
+    console.log('创建新的 WebSocket 实例...');
+    
     ws = new WebSocket(wsUrl);
     
+    console.log('WebSocket 实例已创建，readyState:', ws.readyState);
+    
     ws.onopen = function() {
+        console.log('WebSocket 连接成功!');
         updateStatus('connected');
         addProcessMessage('系统', 'WebSocket 连接成功', 'success');
         
@@ -240,7 +277,20 @@ function handleWebSocketMessage(data) {
     } else if (type === 'log' || type === 'progress') {
         addProcessMessage('Agent', content, 'info');
     } else if (type === 'result') {
+        // 收到最终结果
         resultText = content;
+        
+        // 自动折叠思考过程面板
+        const thoughtSection = document.getElementById('thoughtSection');
+        const thoughtContent = document.getElementById('thoughtContent');
+        const thoughtArrow = document.getElementById('thoughtArrow');
+        
+        if (thoughtContent.style.maxHeight && thoughtContent.style.maxHeight !== '0') {
+            thoughtContent.style.maxHeight = '0';
+            thoughtArrow.classList.remove('rotated');
+        }
+        
+        // 显示结果
         showResult(content);
         isProcessing = false;
         updateExecuteButton(false);
@@ -454,12 +504,16 @@ function removeFile(index) {
 async function handleExecute() {
     const userInput = document.getElementById('userInput').value.trim();
     
+    console.log('用户输入:', userInput);
+    console.log('WebSocket 状态:', ws ? ws.readyState : 'null');
+    
     if (!userInput && selectedFiles.length === 0) {
         alert('请输入问题或选择文件');
         return;
     }
     
-    if (ws && ws.readyState !== WebSocket.OPEN) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        console.error('WebSocket 未连接!');
         alert('WebSocket 未连接，无法执行');
         return;
     }
@@ -489,16 +543,20 @@ async function handleExecute() {
     });
     
     try {
+        console.log('发送执行请求到 /api/agent/execute...');
         const response = await fetch('/api/agent/execute', {
             method: 'POST',
             body: formData
         });
+        
+        console.log('响应状态:', response.status);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
+        console.log('响应数据:', data);
         
         if (data.success) {
             addProcessMessage('系统', '任务已提交，等待处理...', 'success');
@@ -506,6 +564,7 @@ async function handleExecute() {
             throw new Error(data.message || '任务提交失败');
         }
     } catch (error) {
+        console.error('执行失败:', error);
         addProcessMessage('错误', error.message, 'error');
         isProcessing = false;
         updateExecuteButton(false);
@@ -542,13 +601,44 @@ function updateExecuteButton(processing) {
     }
 }
 
-// 显示结果
+// 显示结果（气泡对话形式）
 function showResult(content) {
     const resultSection = document.getElementById('resultSection');
     const resultBody = document.getElementById('resultBody');
     
-    // 简单的 Markdown 渲染
-    resultBody.innerHTML = renderMarkdown(content);
+    // 获取用户问题
+    const userInput = document.getElementById('userInput').value.trim();
+    
+    // 构建对话气泡 HTML
+    let conversationHtml = '<div class="conversation-container">';
+    
+    // 用户问题气泡
+    if (userInput) {
+        conversationHtml += `
+            <div class="message-bubble user-bubble">
+                <div class="bubble-header">
+                    <span class="bubble-icon">👤</span>
+                    <span class="bubble-title">用户</span>
+                </div>
+                <div class="bubble-content">${escapeHtml(userInput)}</div>
+            </div>
+        `;
+    }
+    
+    // Agent 答案气泡
+    conversationHtml += `
+        <div class="message-bubble agent-bubble">
+            <div class="bubble-header">
+                <span class="bubble-icon">🤖</span>
+                <span class="bubble-title">Agent</span>
+            </div>
+            <div class="bubble-content">${renderMarkdown(content)}</div>
+        </div>
+    `;
+    
+    conversationHtml += '</div>';
+    
+    resultBody.innerHTML = conversationHtml;
     
     resultSection.style.display = 'block';
     
@@ -666,6 +756,11 @@ function updateStatus(status) {
     const indicator = document.getElementById('statusIndicator');
     const statusText = document.getElementById('statusText');
     
+    if (!indicator || !statusText) {
+        console.warn('状态指示器元素不存在');
+        return;
+    }
+    
     indicator.className = `status-indicator ${status}`;
     
     const statusMap = {
@@ -676,12 +771,14 @@ function updateStatus(status) {
     statusText.textContent = statusMap[status];
     
     // 状态变化动画
-    anime({
-        targets: indicator,
-        scale: [1, 1.1, 1],
-        duration: 300,
-        easing: 'easeOutQuad'
-    });
+    if (typeof anime !== 'undefined') {
+        anime({
+            targets: indicator,
+            scale: [1, 1.1, 1],
+            duration: 300,
+            easing: 'easeOutQuad'
+        });
+    }
 }
 
 // HTML 转义
@@ -693,12 +790,23 @@ function escapeHtml(text) {
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DOMContentLoaded ===');
+    console.log('开始初始化动画...');
+    
     // 初始化动画
     initAnimations();
     
+    console.log('开始连接 WebSocket...');
     // 连接 WebSocket
     connectWebSocket();
     
+    console.log('自动聚焦到输入框...');
     // 自动聚焦到输入框
-    document.getElementById('userInput').focus();
+    const input = document.getElementById('userInput');
+    if (input) {
+        input.focus();
+        console.log('输入框聚焦成功');
+    } else {
+        console.error('输入框元素不存在!');
+    }
 });

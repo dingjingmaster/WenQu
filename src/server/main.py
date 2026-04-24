@@ -13,8 +13,8 @@ from datetime import datetime
 from src.config import config
 
 # 导入 Agent 和 RAG 模块
-from src.agent.agent_core import WenQuAgent, TodoItem
-from src.rag.rag_service import rag_service
+from src.agent.agent_core import WenQuAgent, TodoItem, set_websocket_manager
+# from src.rag.rag_service import rag_service  # 暂时注释，需要时再启用
 
 # 创建 FastAPI 应用
 app = FastAPI(title="WenQu API", description="WenQu 本地 Agent 系统 API")
@@ -46,8 +46,9 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# 初始化 Agent
+# 初始化 Agent 并设置 WebSocket 管理器
 agent = WenQuAgent()
+set_websocket_manager(manager)
 
 # 请求模型
 class UserRequest(BaseModel):
@@ -91,7 +92,7 @@ async def analyze_request(request: UserRequest):
         分析结果，包括关键点、不清晰点和 TODO 列表
     """
     try:
-        result = agent.run(request.user_input)
+        result = await agent.run(request.user_input)
         return AnalysisResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -158,7 +159,9 @@ async def websocket_endpoint(websocket: WebSocket):
     """
     WebSocket 连接端点，用于实时推送 Agent 执行状态
     """
+    print(f"新的 WebSocket 连接请求...")
     await manager.connect(websocket)
+    print(f"WebSocket 连接成功，当前连接数：{len(manager.active_connections)}")
     try:
         # 发送连接成功消息
         await websocket.send_json({
@@ -167,12 +170,12 @@ async def websocket_endpoint(websocket: WebSocket):
             "timestamp": datetime.now().isoformat()
         })
         
-        # 保持连接
+        # 保持连接并接收客户端消息
         while True:
             try:
-                # 接收客户端消息（如果需要）
+                # 接收客户端消息
                 data = await asyncio.wait_for(websocket.receive_text(), timeout=30)
-                # 可以处理客户端发来的消息
+                print(f"收到客户端消息：{data[:100]}")
             except asyncio.TimeoutError:
                 # 发送心跳
                 await websocket.send_json({
@@ -180,11 +183,13 @@ async def websocket_endpoint(websocket: WebSocket):
                     "timestamp": datetime.now().isoformat()
                 })
             except WebSocketDisconnect:
+                print("WebSocket 断开连接")
                 break
     except Exception as e:
-        pass
+        print(f"WebSocket 错误：{e}")
     finally:
         manager.disconnect(websocket)
+        print(f"WebSocket 连接已关闭，当前连接数：{len(manager.active_connections)}")
 
 @app.post("/api/agent/execute")
 async def agent_execute(
@@ -202,6 +207,10 @@ async def agent_execute(
         执行结果
     """
     try:
+        print(f"\n=== 收到执行请求 ===")
+        print(f"查询内容：{query[:100]}")
+        print(f"文件数量：{len(files) if files else 0}")
+        
         # 发送开始消息
         await manager.broadcast({
             "type": "log",
@@ -229,18 +238,24 @@ async def agent_execute(
                 "timestamp": datetime.now().isoformat()
             })
         
-        # 执行 Agent 任务
-        result = agent.run(query)
+        print(f"开始执行 Agent 任务...")
+        # 异步执行 Agent 任务
+        result = await agent.run(query)
+        print(f"Agent 任务执行完成")
         
-        # 发送结果
+        # 发送最终结果
         await manager.broadcast({
             "type": "result",
             "content": json.dumps(result, ensure_ascii=False, indent=2),
             "timestamp": datetime.now().isoformat()
         })
         
+        print(f"结果已发送")
         return {"success": True, "message": "任务已提交"}
     except Exception as e:
+        print(f"执行出错：{e}")
+        import traceback
+        traceback.print_exc()
         await manager.broadcast({
             "type": "error",
             "content": str(e),

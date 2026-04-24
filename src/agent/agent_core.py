@@ -1,8 +1,38 @@
 import requests
 import json
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Any
 from src.config import config
+
+# 全局 WebSocket 管理器引用
+_websocket_manager = None
+
+def set_websocket_manager(manager):
+    """设置 WebSocket 管理器"""
+    global _websocket_manager
+    _websocket_manager = manager
+
+async def send_thought(content: str):
+    """发送思考过程到 WebSocket"""
+    if _websocket_manager:
+        try:
+            await _websocket_manager.broadcast({
+                "type": "thought",
+                "content": content
+            })
+        except Exception as e:
+            print(f"发送思考过程失败：{e}")
+
+async def send_progress(content: str):
+    """发送进度更新到 WebSocket"""
+    if _websocket_manager:
+        try:
+            await _websocket_manager.broadcast({
+                "type": "progress",
+                "content": content
+            })
+        except Exception as e:
+            print(f"发送进度更新失败：{e}")
 
 # 定义 TODO 项的数据结构
 class TodoItem(BaseModel):
@@ -92,8 +122,12 @@ class WenQuAgent:
     def __init__(self):
         self.client = LlamaServerClient()
     
-    def analyze_requirement(self, user_input: str) -> RequirementAnalysis:
+    async def analyze_requirement(self, user_input: str) -> RequirementAnalysis:
         """分析用户需求，生成 TODO 列表"""
+        # 发送思考过程
+        await send_thought("正在分析用户需求...")
+        await send_thought(f"用户输入：{user_input[:100]}...")
+        
         messages = [
             {
                 "role": "user",
@@ -117,6 +151,7 @@ class WenQuAgent:
             }
         ]
         
+        await send_thought("正在调用语言模型进行分析...")
         output_schema = {
             "type": "object",
             "properties": {
@@ -140,14 +175,18 @@ class WenQuAgent:
         }
         
         result = self.client.chat_with_json_output(messages, output_schema)
+        await send_thought("需求分析完成，正在生成 TODO 列表...")
         
         # 转换为 Pydantic 模型
         todos = [TodoItem(**todo) for todo in result.get("todos", [])]
-        return RequirementAnalysis(
+        analysis = RequirementAnalysis(
             key_points=result.get("key_points", []),
             unclear_points=result.get("unclear_points", []),
             todos=todos
         )
+        
+        await send_thought(f"生成 {len(analysis.todos)} 项任务")
+        return analysis
     
     def validate_todos(self, user_input: str, todos: List[TodoItem]) -> str:
         """验证 TODO 列表是否满足用户需求"""
@@ -182,20 +221,20 @@ TODO 列表：
         
         return self.client.chat(messages)
     
-    def run(self, user_input: str) -> dict:
+    async def run(self, user_input: str) -> dict:
         """运行完整的 Agent 流程"""
         # 1. 分析用户需求
-        print("正在分析用户需求...")
-        analysis = self.analyze_requirement(user_input)
+        await send_progress("开始分析用户需求...")
+        analysis = await self.analyze_requirement(user_input)
         
         # 2. 检查是否有不清晰的点
         if analysis.unclear_points:
-            print("发现以下不清晰的点：")
-            for point in analysis.unclear_points:
-                print(f"  - {point}")
+            await send_progress(f"发现 {len(analysis.unclear_points)} 个不清晰点")
         
         # 3. 输出 TODO 列表
-        print(f"生成 TODO 列表，共 {len(analysis.todos)} 项任务")
+        await send_progress(f"生成 {len(analysis.todos)} 项任务")
+        
+        await send_progress("任务分析完成")
         
         return {
             "key_points": analysis.key_points,
