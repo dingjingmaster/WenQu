@@ -2,6 +2,8 @@
 
 > 基于 llama-server 实现的本地 AI Agent 系统，提供需求分析、任务规划和执行能力
 
+📖 **完整文档**: [docs/README.md](docs/README.md)
+
 ## 特性
 
 - 🤖 **智能 Agent**: 分析用户需求，生成 TODO 列表，执行任务
