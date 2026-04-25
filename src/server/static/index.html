@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Permissions-Policy" content="unload=()">
+    <title>WenQu - 本地 AI Agent 系统</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/assets/styles.css">
+</head>
+<body>
+    <!-- 粒子背景 -->
+    <div id="particles-js"></div>
+    
+    <div class="main-container">
+        <!-- Logo 区域 -->
+        <div class="logo-section">
+            <h1 class="logo-text">
+                <span class="logo-letter" data-letter="W" style="color: #4285f4;">W</span>
+                <span class="logo-letter" data-letter="e" style="color: #ea4335;">e</span>
+                <span class="logo-letter" data-letter="n" style="color: #fbbc05;">n</span>
+                <span class="logo-letter" data-letter="Q" style="color: #4285f4;">Q</span>
+                <span class="logo-letter" data-letter="u" style="color: #34a853;">u</span>
+            </h1>
+            <p class="logo-subtitle fade-in">本地 AI Agent 系统</p>
+        </div>
+
+        <!-- 主要内容区域 -->
+        <div class="content-section slide-up">
+            <!-- 用户输入框 -->
+            <!-- 统一的对话和消息区域 -->
+            <div class="chat-container">
+                <!-- 合并的过程显示区域 -->
+                <div id="processSection" class="message-box process-box" style="display: block;">
+                    <div class="message-header">
+                        <div class="header-left">
+                            <span class="header-icon">⚙️</span>
+                            <span class="header-title">执行过程</span>
+                            <span id="processCount" class="message-count">0 条</span>
+                        </div>
+                        <div class="header-right">
+                            <label class="checkbox-label" title="显示思考过程">
+                                <input type="checkbox" id="showThoughtCheckbox" checked onchange="toggleThoughtVisibility()">
+                                <span>💭 显示思考过程</span>
+                            </label>
+                            <span id="processArrow" class="arrow" onclick="toggleProcessCollapse()">▼</span>
+                        </div>
+                    </div>
+                    <div id="processContent" class="message-content collapsed">
+                        <!-- 统一的消息列表 -->
+                        <div id="processMessages" class="message-list"></div>
+                    </div>
+                </div>
+
+                <!-- 结果展示区域 -->
+                <div id="resultSection" class="message-box result-box" style="display: block;">
+                    <div class="message-header">
+                        <span class="header-icon">✅</span>
+                        <span class="header-title">执行结果</span>
+                    </div>
+                    <div id="resultContent" class="message-content">
+                        <div class="result-actions">
+                            <button class="action-button" onclick="clearConversation()">
+                                🗑️ 清除对话
+                            </button>
+                            <button class="action-button" onclick="copyResult()">
+                                📋 复制结果
+                            </button>
+                        </div>
+                        <div id="resultBody" class="markdown-body">
+                            <div class="conversation-container">
+                                <div class="message-bubble agent-bubble">
+                                    <div class="bubble-header">
+                                        <span class="bubble-icon">🤖</span>
+                                        <span class="bubble-title">Agent</span>
+                                    </div>
+                                    <div class="bubble-content">
+                                        <p>你好！我是 WenQu AI 助手，有什么可以帮助你的吗？</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户输入区域 -->
+            <div class="user-input-area">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="userInput" 
+                        class="main-input"
+                        placeholder="请输入您的问题或请求..."
+                        rows="3"
+                    ></textarea>
+                    <div class="input-glow"></div>
+                </div>
+            </div>
+
+            <!-- 操作按钮区域 -->
+            <div class="action-section">
+                <div class="button-row">
+                    <input 
+                        type="file" 
+                        id="fileInput" 
+                        multiple 
+                        style="display: none;"
+                        onchange="handleFileSelect(event)"
+                    />
+                    <button 
+                        id="uploadBtn" 
+                        class="upload-button"
+                        onclick="document.getElementById('fileInput').click()"
+                    >
+                        <span class="button-icon">📁</span>
+                        <span class="button-text">选择文件</span>
+                    </button>
+                    
+                    <button 
+                        id="executeBtn" 
+                        class="execute-button"
+                        onclick="handleExecute()"
+                    >
+                        <span id="executeBtnText" class="btn-text">🚀 执行</span>
+                        <span id="executeBtnLoader" class="loader"></span>
+                        <div class="btn-particles"></div>
+                    </button>
+                </div>
+                
+                <!-- 已选文件列表 -->
+                <div id="fileList" class="file-list"></div>
+
+                <!-- WebSocket 连接状态指示器 -->
+                <div class="status-bar">
+                    <div id="statusIndicator" class="status-indicator disconnected">
+                        <span class="status-dot"></span>
+                        <span id="statusText" class="status-text">未连接</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 动画库 -->
+    <script src="/static/assets/particles.min.js?t=202604241930"></script>
+    <script src="/static/assets/anime.min.js?t=202604241915"></script>
+    <script>
+        console.log('检查动画库加载...');
+        if (typeof anime === 'undefined') {
+            console.error('❌ anime.js 未加载');
+        } else {
+            console.log('✅ anime.js 已加载，版本:', anime.version);
+        }
+        if (typeof particlesJS === 'undefined') {
+            console.warn('⚠️ particles.js 未加载');
+        } else {
+            console.log('✅ particles.js 已加载');
+        }
+    </script>
+    <script src="/static/assets/app.js?t=202604241915"></script>
+</body>
+</html>
