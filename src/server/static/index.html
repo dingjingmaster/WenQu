@@ -29,43 +29,56 @@
             <!-- 用户输入框 -->
             <!-- 统一的对话和消息区域 -->
             <div class="chat-container">
-                <!-- 模型思考过程显示区域 -->
-                <div id="thoughtSection" class="message-box thought-box" style="display: none;">
-                    <div class="message-header" onclick="toggleThoughtCollapse()">
-                        <span class="header-icon">💭</span>
-                        <span class="header-title">思考过程</span>
-                        <span id="thoughtCount" class="message-count">0 条</span>
-                        <span id="thoughtArrow" class="arrow">▼</span>
-                    </div>
-                    <div id="thoughtContent" class="message-content">
-                        <div id="thoughtMessages" class="message-list"></div>
-                    </div>
-                </div>
-
-                <!-- 执行过程显示区域 -->
-                <div id="processSection" class="message-box process-box" style="display: none;">
-                    <div class="message-header" onclick="toggleProcessCollapse()">
-                        <span class="header-icon">⚙️</span>
-                        <span class="header-title">执行过程</span>
-                        <span id="processCount" class="message-count">0 条</span>
-                        <span id="processArrow" class="arrow">▼</span>
+                <!-- 合并的过程显示区域 -->
+                <div id="processSection" class="message-box process-box" style="display: block;">
+                    <div class="message-header">
+                        <div class="header-left">
+                            <span class="header-icon">⚙️</span>
+                            <span class="header-title">执行过程</span>
+                            <span id="processCount" class="message-count">0 条</span>
+                        </div>
+                        <div class="header-right">
+                            <label class="checkbox-label" title="显示思考过程">
+                                <input type="checkbox" id="showThoughtCheckbox" checked onchange="toggleThoughtVisibility()">
+                                <span>💭 显示思考过程</span>
+                            </label>
+                            <span id="processArrow" class="arrow" onclick="toggleProcessCollapse()">▼</span>
+                        </div>
                     </div>
                     <div id="processContent" class="message-content">
+                        <!-- 统一的消息列表 -->
                         <div id="processMessages" class="message-list"></div>
                     </div>
                 </div>
 
                 <!-- 结果展示区域 -->
-                <div id="resultSection" class="message-box result-box" style="display: none;">
+                <div id="resultSection" class="message-box result-box" style="display: block;">
                     <div class="message-header">
                         <span class="header-icon">✅</span>
                         <span class="header-title">执行结果</span>
                     </div>
                     <div id="resultContent" class="message-content">
-                        <div id="resultBody" class="markdown-body"></div>
-                        <button class="copy-button" onclick="copyResult()">
-                            📋 复制结果
-                        </button>
+                        <div class="result-actions">
+                            <button class="action-button" onclick="clearConversation()">
+                                🗑️ 清除对话
+                            </button>
+                            <button class="action-button" onclick="copyResult()">
+                                📋 复制结果
+                            </button>
+                        </div>
+                        <div id="resultBody" class="markdown-body">
+                            <div class="conversation-container">
+                                <div class="message-bubble agent-bubble">
+                                    <div class="bubble-header">
+                                        <span class="bubble-icon">🤖</span>
+                                        <span class="bubble-title">Agent</span>
+                                    </div>
+                                    <div class="bubble-content">
+                                        <p>你好！我是 WenQu AI 助手，有什么可以帮助你的吗？</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -125,6 +138,7 @@
                 </div>
             </div>
         </div>
+    </div>
 
     <!-- 动画库 -->
     <script src="/static/assets/particles.min.js?t=202604241930"></script>

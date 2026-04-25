@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>紧凑布局测试</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/assets/styles.css">
+</head>
+<body>
+    <!-- 粒子背景 -->
+    <div id="particles-js"></div>
+    
+    <div class="main-container">
+        <!-- Logo 区域 -->
+        <div class="logo-section">
+            <h1 class="logo-text">
+                <span class="logo-letter" data-letter="W" style="color: #4285f4;">W</span>
+                <span class="logo-letter" data-letter="e" style="color: #ea4335;">e</span>
+                <span class="logo-letter" data-letter="n" style="color: #fbbc05;">n</span>
+                <span class="logo-letter" data-letter="Q" style="color: #4285f4;">Q</span>
+                <span class="logo-letter" data-letter="u" style="color: #ea4335;">u</span>
+            </h1>
+            <div class="logo-subtitle">本地 AI Agent 系统</div>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content-section">
+            <!-- 统一的对话和消息区域 -->
+            <div class="chat-container">
+                <!-- 合并的过程显示区域 -->
+                <div id="processSection" class="message-box process-box" style="display: block;">
+                    <div class="message-header">
+                        <div class="header-left">
+                            <span class="header-icon">⚙️</span>
+                            <span class="header-title">执行过程</span>
+                            <span id="processCount" class="message-count">5 条</span>
+                        </div>
+                        <div class="header-right">
+                            <label class="checkbox-label" title="显示思考过程">
+                                <input type="checkbox" id="showThoughtCheckbox" checked onchange="toggleThoughtVisibility()">
+                                <span>💭 思考</span>
+                            </label>
+                            <span id="processArrow" class="arrow" onclick="toggleProcessCollapse()">▼</span>
+                        </div>
+                    </div>
+                    <div id="processContent" class="message-content">
+                        <!-- 思考过程区域 -->
+                        <div id="thoughtSection" class="thought-subsection">
+                            <div class="subsection-header">
+                                <span class="subsection-icon">💭</span>
+                                <span class="subsection-title">思考过程</span>
+                                <span id="thoughtCount" class="subsection-count">2 条</span>
+                            </div>
+                            <div id="thoughtMessages" class="message-list">
+                                <div class="thought-item">
+                                    <span class="thought-icon">💭</span>
+                                    <span class="thought-text">正在分析用户问题，理解需求...</span>
+                                </div>
+                                <div class="thought-item">
+                                    <span class="thought-icon">💭</span>
+                                    <span class="thought-text">调用 Python 工具进行代码执行</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 执行过程区域 -->
+                        <div class="process-subsection">
+                            <div class="subsection-header">
+                                <span class="subsection-icon">⚙️</span>
+                                <span class="subsection-title">执行过程</span>
+                                <span id="execCount" class="subsection-count">3 条</span>
+                            </div>
+                            <div id="processMessages" class="message-list">
+                                <div class="process-item">
+                                    <span class="process-icon">📝</span>
+                                    <span class="process-text">开始执行任务...</span>
+                                </div>
+                                <div class="process-item">
+                                    <span class="process-icon">✅</span>
+                                    <span class="process-text">工具调用成功</span>
+                                </div>
+                                <div class="process-item">
+                                    <span class="process-icon">📊</span>
+                                    <span class="process-text">结果处理完成</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 结果展示区域 -->
+                <div id="resultSection" class="message-box result-box" style="display: block;">
+                    <div class="message-header">
+                        <span class="header-icon">✅</span>
+                        <span class="header-title">执行结果</span>
+                    </div>
+                    <div id="resultContent" class="message-content">
+                        <div class="result-actions">
+                            <button class="action-button" onclick="clearConversation()">
+                                🗑️ 清除对话
+                            </button>
+                            <button class="action-button" onclick="copyResult()">
+                                📋 复制结果
+                            </button>
+                        </div>
+                        <div id="resultBody" class="markdown-body">
+                            <div class="conversation-container">
+                                <!-- 第 1 轮对话 -->
+                                <div class="message-bubble agent-bubble">
+                                    <div class="bubble-header">
+                                        <span class="bubble-icon">🤖</span>
+                                        <span class="bubble-title">Agent</span>
+                                    </div>
+                                    <div class="bubble-content">
+                                        <p>你好！我是 WenQu AI 助手，有什么可以帮助你的吗？</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="conversation-divider"></div>
+                                
+                                <div class="message-bubble user-bubble">
+                                    <div class="bubble-header">
+                                        <span class="bubble-icon">👤</span>
+                                        <span class="bubble-title">用户</span>
+                                    </div>
+                                    <div class="bubble-content">请帮我分析 Python 是什么</div>
+                                </div>
+                                
+                                <div class="message-bubble agent-bubble">
+                                    <div class="bubble-header">
+                                        <span class="bubble-icon">🤖</span>
+                                        <span class="bubble-title">Agent</span>
+                                    </div>
+                                    <div class="bubble-content">
+                                        <p>Python 是一种高级编程语言，具有以下特点：</p>
+                                        <ul>
+                                            <li>简洁易读的语法</li>
+                                            <li>支持多种编程范式</li>
+                                            <li>丰富的标准库和第三方库</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户输入区域 -->
+            <div class="user-input-area">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="userInput" 
+                        class="main-input"
+                        placeholder="请输入您的问题或请求..."
+                        rows="3"
+                    >这是一个新的问题</textarea>
+                    <div class="input-glow"></div>
+                </div>
+            </div>
+
+            <!-- 操作按钮区域 -->
+            <div class="action-section">
+                <div class="button-row">
+                    <button class="upload-button">
+                        <span class="button-icon">📁</span>
+                        <span class="button-text">选择文件</span>
+                    </button>
+                    
+                    <button class="execute-button">
+                        <span class="btn-text">🚀 执行</span>
+                    </button>
+                </div>
+                
+                <!-- 已选文件列表示例 -->
+                <div class="file-list">
+                    <div class="file-item">
+                        <span class="file-icon">📄</span>
+                        <span class="file-name">test.py</span>
+                        <span class="remove-file">✕</span>
+                    </div>
+                </div>
+
+                <!-- 状态栏 -->
+                <div class="status-bar">
+                    <div id="statusIndicator" class="status-indicator connected">
+                        <span class="status-dot"></span>
+                        <span id="statusText" class="status-text">已连接</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/assets/particles.min.js"></script>
+    <script src="/static/assets/anime.min.js"></script>
+    <script>
+        // 切换思考过程显示/隐藏
+        function toggleThoughtVisibility() {
+            const thoughtSection = document.getElementById('thoughtSection');
+            const checkbox = document.getElementById('showThoughtCheckbox');
+            
+            if (!thoughtSection || !checkbox) return;
+            
+            if (checkbox.checked) {
+                thoughtSection.style.display = 'block';
+            } else {
+                thoughtSection.style.display = 'none';
+            }
+            
+            // 重新计算高度以适应内容变化
+            const processContent = document.getElementById('processContent');
+            if (processContent && !processContent.classList.contains('collapsed')) {
+                setTimeout(() => {
+                    processContent.style.maxHeight = processContent.scrollHeight + 'px';
+                }, 10);
+            }
+        }
+        
+        // 折叠/展开过程面板
+        function toggleProcessCollapse() {
+            const processContent = document.getElementById('processContent');
+            const processArrow = document.getElementById('processArrow');
+            
+            if (!processContent || !processArrow) return;
+            
+            if (processContent.classList.contains('collapsed')) {
+                processContent.classList.remove('collapsed');
+                processArrow.classList.add('rotated');
+                setTimeout(() => {
+                    processContent.style.maxHeight = processContent.scrollHeight + 'px';
+                }, 10);
+            } else {
+                processContent.style.maxHeight = '0';
+                processContent.classList.add('collapsed');
+                processArrow.classList.remove('rotated');
+            }
+        }
+        
+        // 清除对话
+        function clearConversation() {
+            const resultBody = document.getElementById('resultBody');
+            if (resultBody) {
+                resultBody.innerHTML = '';
+            }
+            alert('对话已清除！现在可以开始新的对话。');
+        }
+        
+        // 复制结果
+        function copyResult() {
+            const resultBody = document.getElementById('resultBody');
+            if (resultBody) {
+                const text = resultBody.innerText;
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('结果已复制到剪贴板');
+                });
+            }
+        }
+        
+        // 初始化粒子背景
+        if (typeof particlesJS !== 'undefined') {
+            particlesJS('particles-js', {
+                particles: {
+                    number: { value: 80 },
+                    color: { value: '#ffffff' },
+                    opacity: { value: 0.5 },
+                    size: { value: 3 },
+                    links: { enable: true, color: '#ffffff', opacity: 0.4 }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

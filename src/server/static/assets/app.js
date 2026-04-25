@@ -245,10 +245,28 @@ function connectWebSocket() {
     
     ws.onmessage = function(event) {
         try {
+            // 检查数据是否为空
+            if (!event.data) {
+                console.error('WebSocket 收到空消息');
+                addProcessMessage('系统', '收到空消息', 'warning');
+                return;
+            }
+            
             const data = JSON.parse(event.data);
+            
+            // 验证数据结构
+            if (!data || typeof data !== 'object') {
+                console.error('WebSocket 消息格式错误:', event.data);
+                addProcessMessage('系统', '消息格式错误', 'error');
+                return;
+            }
+            
             handleWebSocketMessage(data);
         } catch (e) {
             console.error('WebSocket 消息解析错误:', e);
+            addProcessMessage('系统', `消息解析错误：${e.message}`, 'error');
+            // 更新状态为错误
+            updateStatus('error');
         }
     };
     
@@ -269,49 +287,72 @@ function connectWebSocket() {
 
 // 处理 WebSocket 消息
 function handleWebSocketMessage(data) {
-    const { type, content } = data;
-    
-    if (type === 'thought') {
-        // 模型思考过程
-        addThoughtMessage('思考', content);
-    } else if (type === 'log' || type === 'progress') {
-        addProcessMessage('Agent', content, 'info');
-    } else if (type === 'result') {
-        // 收到最终结果
-        resultText = content;
+    try {
+        const { type, content } = data;
         
-        // 自动折叠思考过程面板
-        const thoughtSection = document.getElementById('thoughtSection');
-        const thoughtContent = document.getElementById('thoughtContent');
-        const thoughtArrow = document.getElementById('thoughtArrow');
-        
-        if (thoughtContent.style.maxHeight && thoughtContent.style.maxHeight !== '0') {
-            thoughtContent.style.maxHeight = '0';
-            thoughtArrow.classList.remove('rotated');
+        if (type === 'connected') {
+            // WebSocket 连接成功
+            console.log('WebSocket 连接已建立');
+            updateStatus('connected');
+            return; // 直接返回，不继续处理
+        } else if (type === 'heartbeat') {
+            // 心跳消息，忽略
+            console.log('收到心跳消息');
+            return; // 直接返回，不继续处理
+        } else if (type === 'thought') {
+            // 模型思考过程
+            addThoughtMessage('思考', content);
+        } else if (type === 'log' || type === 'progress') {
+            addProcessMessage('Agent', content, 'info');
+        } else if (type === 'result') {
+            // 收到最终结果
+            resultText = content;
+            
+            // 自动折叠思考过程面板（安全处理）
+            const thoughtSection = document.getElementById('thoughtSection');
+            const thoughtContent = document.getElementById('thoughtContent');
+            const thoughtArrow = document.getElementById('thoughtArrow');
+            
+            if (thoughtContent && thoughtArrow) {
+                if (thoughtContent.style.maxHeight && thoughtContent.style.maxHeight !== '0') {
+                    thoughtContent.style.maxHeight = '0';
+                    thoughtArrow.classList.remove('rotated');
+                }
+            }
+            
+            // 显示结果
+            showResult(content);
+            isProcessing = false;
+            updateExecuteButton(false);
+            addProcessMessage('系统', '任务执行完成', 'success');
+            
+            // 结果展示动画
+            if (typeof anime !== 'undefined') {
+                anime({
+                    targets: '#resultSection',
+                    scale: [0.9, 1],
+                    opacity: [0, 1],
+                    duration: 500,
+                    easing: 'easeOutQuad'
+                });
+            }
+        } else if (type === 'error') {
+            addProcessMessage('错误', content, 'error');
+            isProcessing = false;
+            updateExecuteButton(false);
+        } else {
+            // 未知消息类型，记录日志
+            console.warn('未知的 WebSocket 消息类型:', type, data);
         }
-        
-        // 显示结果
-        showResult(content);
-        isProcessing = false;
-        updateExecuteButton(false);
-        addProcessMessage('系统', '任务执行完成', 'success');
-        
-        // 结果展示动画
-        anime({
-            targets: '#resultSection',
-            scale: [0.9, 1],
-            opacity: [0, 1],
-            duration: 500,
-            easing: 'easeOutQuad'
-        });
-    } else if (type === 'error') {
-        addProcessMessage('错误', content, 'error');
+    } catch (error) {
+        console.error('处理 WebSocket 消息时发生错误:', error);
+        addProcessMessage('系统', `消息处理错误：${error.message}`, 'error');
         isProcessing = false;
         updateExecuteButton(false);
     }
 }
 
-// 添加思考过程消息
+// 添加思考过程消息（整合到执行过程中）
 let thoughtMessages = [];
 function addThoughtMessage(source, content) {
     const now = new Date();
@@ -323,12 +364,14 @@ function addThoughtMessage(source, content) {
         time
     });
     
-    const messagesDiv = document.getElementById('thoughtMessages');
+    // 添加到统一的消息列表
+    const messagesDiv = document.getElementById('processMessages');
     const messageDiv = document.createElement('div');
-    messageDiv.className = 'thought-item';
+    messageDiv.className = 'process-message thought';
     messageDiv.innerHTML = `
-        <span class="thought-icon">💭</span>
-        <span class="thought-text">${escapeHtml(content)}</span>
+        <span class="message-time">${time}</span>
+        <span class="message-icon">💭</span>
+        <span class="message-content">${escapeHtml(content)}</span>
     `;
     messagesDiv.appendChild(messageDiv);
     
@@ -344,25 +387,30 @@ function addThoughtMessage(source, content) {
     }
     
     // 自动滚动到底部
-    const thoughtContent = document.getElementById('thoughtContent');
-    if (thoughtContent) {
-        thoughtContent.scrollTop = thoughtContent.scrollHeight;
+    const processContent = document.getElementById('processContent');
+    if (processContent) {
+        processContent.scrollTop = processContent.scrollHeight;
     }
     
-    // 显示思考面板
-    const thoughtSection = document.getElementById('thoughtSection');
-    if (thoughtSection) {
-        thoughtSection.style.display = 'block';
+    // 显示面板
+    const processSection = document.getElementById('processSection');
+    if (processSection) {
+        processSection.style.display = 'block';
     }
     
-    // 更新思考计数
-    updateThoughtCount();
+    // 检查复选框状态，如果选中则展开面板
+    const checkbox = document.getElementById('showThoughtCheckbox');
+    const processArrow = document.getElementById('processArrow');
     
-    // 展开面板
-    const thoughtArrow = document.getElementById('thoughtArrow');
-    if (thoughtArrow && !thoughtArrow.classList.contains('rotated')) {
-        toggleThoughtCollapse();
+    if (checkbox && checkbox.checked && processContent && processArrow) {
+        // 如果面板是折叠状态，展开它
+        if (processContent.classList.contains('collapsed')) {
+            toggleProcessCollapse();
+        }
     }
+    
+    // 更新计数
+    updateProcessCount();
 }
 
 // 添加过程消息
@@ -380,35 +428,50 @@ function addProcessMessage(source, content, type) {
     const messagesDiv = document.getElementById('processMessages');
     const messageDiv = document.createElement('div');
     messageDiv.className = `process-message ${type}`;
+    
+    // 根据类型设置图标
+    let icon = '⚙️';
+    if (type === 'success') icon = '✅';
+    else if (type === 'error') icon = '❌';
+    else if (type === 'warning') icon = '⚠️';
+    else if (type === 'info') icon = 'ℹ️';
+    
     messageDiv.innerHTML = `
         <span class="message-time">${time}</span>
+        <span class="message-icon">${icon}</span>
         <span class="message-content">${escapeHtml(content)}</span>
     `;
     messagesDiv.appendChild(messageDiv);
     
     // 消息进入动画
-    anime({
-        targets: messageDiv,
-        translateX: [-50, 0],
-        opacity: [0, 1],
-        duration: 400,
-        easing: 'easeOutQuad'
-    });
+    if (typeof anime !== 'undefined') {
+        anime({
+            targets: messageDiv,
+            translateX: [-20, 0],
+            opacity: [0, 1],
+            duration: 300,
+            easing: 'easeOutQuad'
+        });
+    }
     
     // 自动滚动到底部
     const processContent = document.getElementById('processContent');
-    processContent.scrollTop = processContent.scrollHeight;
+    if (processContent) {
+        processContent.scrollTop = processContent.scrollHeight;
+    }
     
-    // 显示过程面板
+    // 显示面板
     const processSection = document.getElementById('processSection');
-    processSection.style.display = 'block';
+    if (processSection) {
+        processSection.style.display = 'block';
+    }
     
     // 更新消息计数
     updateProcessCount();
     
-    // 展开面板
+    // 展开面板（如果当前是折叠状态）
     const processArrow = document.getElementById('processArrow');
-    if (!processArrow.classList.contains('rotated')) {
+    if (processArrow && !processArrow.classList.contains('rotated')) {
         toggleProcessCollapse();
     }
 }
@@ -424,8 +487,12 @@ function updateThoughtCount() {
 // 更新消息计数
 function updateProcessCount() {
     const countSpan = document.getElementById('processCount');
+    const execCountSpan = document.getElementById('execCount');
     if (countSpan) {
         countSpan.textContent = `${processMessages.length} 条`;
+    }
+    if (execCountSpan) {
+        execCountSpan.textContent = `${processMessages.length} 条`;
     }
 }
 
@@ -513,7 +580,8 @@ async function handleExecute() {
     updateExecuteButton(true);
     processMessages = [];
     document.getElementById('processMessages').innerHTML = '';
-    document.getElementById('resultSection').style.display = 'none';
+    // 保持结果区域显示，不隐藏
+    // document.getElementById('resultSection').style.display = 'none';
     
     addProcessMessage('系统', '开始执行任务...', 'info');
     
@@ -600,43 +668,60 @@ function showResult(content) {
     // 获取用户问题
     const userInput = document.getElementById('userInput').value.trim();
     
-    // 构建对话气泡 HTML
-    let conversationHtml = '<div class="conversation-container">';
-    
-    // 用户问题气泡
-    if (userInput) {
-        conversationHtml += `
-            <div class="message-bubble user-bubble">
-                <div class="bubble-header">
-                    <span class="bubble-icon">👤</span>
-                    <span class="bubble-title">用户</span>
-                </div>
-                <div class="bubble-content">${escapeHtml(userInput)}</div>
-            </div>
-        `;
+    // 查找或创建对话容器
+    let conversationContainer = resultBody.querySelector('.conversation-container');
+    if (!conversationContainer) {
+        conversationContainer = document.createElement('div');
+        conversationContainer.className = 'conversation-container';
+        resultBody.appendChild(conversationContainer);
     }
     
-    // Agent 答案气泡
-    conversationHtml += `
-        <div class="message-bubble agent-bubble">
+    // 添加用户问题气泡
+    if (userInput) {
+        const userBubble = document.createElement('div');
+        userBubble.className = 'message-bubble user-bubble';
+        userBubble.innerHTML = `
             <div class="bubble-header">
-                <span class="bubble-icon">🤖</span>
-                <span class="bubble-title">Agent</span>
+                <span class="bubble-icon">👤</span>
+                <span class="bubble-title">用户</span>
             </div>
-            <div class="bubble-content">${renderMarkdown(content)}</div>
+            <div class="bubble-content">${escapeHtml(userInput)}</div>
+        `;
+        conversationContainer.appendChild(userBubble);
+        
+        // 添加分隔线
+        const divider = document.createElement('div');
+        divider.className = 'conversation-divider';
+        conversationContainer.appendChild(divider);
+    }
+    
+    // 添加 Agent 答案气泡
+    const agentBubble = document.createElement('div');
+    agentBubble.className = 'message-bubble agent-bubble';
+    agentBubble.innerHTML = `
+        <div class="bubble-header">
+            <span class="bubble-icon">🤖</span>
+            <span class="bubble-title">Agent</span>
         </div>
+        <div class="bubble-content">${renderMarkdown(content)}</div>
     `;
-    
-    conversationHtml += '</div>';
-    
-    resultBody.innerHTML = conversationHtml;
+    conversationContainer.appendChild(agentBubble);
     
     resultSection.style.display = 'block';
     
-    // 滚动到结果区域
+    // 滚动到底部
+    const resultContent = document.getElementById('resultContent');
     setTimeout(() => {
-        resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (resultContent) {
+            resultContent.scrollTop = resultContent.scrollHeight;
+        }
     }, 100);
+    
+    // 清空输入框
+    const inputField = document.getElementById('userInput');
+    if (inputField) {
+        inputField.value = '';
+    }
 }
 
 // 简单的 Markdown 渲染
@@ -673,6 +758,60 @@ function renderMarkdown(text) {
     return html;
 }
 
+// 清除对话
+function clearConversation() {
+    const resultBody = document.getElementById('resultBody');
+    if (resultBody) {
+        resultBody.innerHTML = '';
+    }
+    
+    // 清空输入框
+    const inputField = document.getElementById('userInput');
+    if (inputField) {
+        inputField.value = '';
+    }
+    
+    // 清空思考过程
+    thoughtMessages = [];
+    const thoughtMessagesDiv = document.getElementById('thoughtMessages');
+    if (thoughtMessagesDiv) {
+        thoughtMessagesDiv.innerHTML = '';
+    }
+    updateThoughtCount();
+    
+    // 清空执行过程
+    processMessages = [];
+    const processMessagesDiv = document.getElementById('processMessages');
+    if (processMessagesDiv) {
+        processMessagesDiv.innerHTML = '';
+    }
+    updateProcessCount();
+    
+    // 保持结果区域显示（不隐藏）
+    const resultSection = document.getElementById('resultSection');
+    if (resultSection) {
+        resultSection.style.display = 'block';
+    }
+    
+    // 显示思考过程和执行过程面板
+    const thoughtSection = document.getElementById('thoughtSection');
+    if (thoughtSection) {
+        thoughtSection.style.display = 'block';
+    }
+    
+    const processSection = document.getElementById('processSection');
+    if (processSection) {
+        processSection.style.display = 'block';
+    }
+    
+    // 聚焦输入框
+    setTimeout(() => {
+        if (inputField) {
+            inputField.focus();
+        }
+    }, 100);
+}
+
 // 复制结果
 async function copyResult() {
     try {
@@ -680,37 +819,19 @@ async function copyResult() {
         
         // 复制成功动画
         const copyBtn = document.querySelector('.copy-button');
-        anime({
-            targets: copyBtn,
-            scale: [1, 1.2, 1],
-            backgroundColor: ['#667eea', '#4caf50', '#667eea'],
-            duration: 500,
-            easing: 'easeOutQuad'
-        });
+        if (copyBtn && typeof anime !== 'undefined') {
+            anime({
+                targets: copyBtn,
+                scale: [1, 1.2, 1],
+                backgroundColor: ['#667eea', '#4caf50', '#667eea'],
+                duration: 500,
+                easing: 'easeOutQuad'
+            });
+        }
         
         alert('结果已复制到剪贴板');
     } catch (error) {
         alert('复制失败');
-    }
-}
-
-// 折叠/展开思考过程面板
-function toggleThoughtCollapse() {
-    const thoughtContent = document.getElementById('thoughtContent');
-    const thoughtArrow = document.getElementById('thoughtArrow');
-    
-    if (!thoughtContent || !thoughtArrow) return;
-    
-    if (thoughtContent.classList.contains('collapsed')) {
-        thoughtContent.classList.remove('collapsed');
-        thoughtArrow.classList.add('rotated');
-        setTimeout(() => {
-            thoughtContent.style.maxHeight = thoughtContent.scrollHeight + 'px';
-        }, 10);
-    } else {
-        thoughtContent.style.maxHeight = '0';
-        thoughtContent.classList.add('collapsed');
-        thoughtArrow.classList.remove('rotated');
     }
 }
 
@@ -731,6 +852,32 @@ function toggleProcessCollapse() {
         processContent.style.maxHeight = '0';
         processContent.classList.add('collapsed');
         processArrow.classList.remove('rotated');
+    }
+}
+
+// 切换思考过程显示/隐藏（现在思考过程已整合到执行过程中）
+function toggleThoughtVisibility() {
+    // 查找所有思考消息
+    const thoughtMessages = document.querySelectorAll('.process-message.thought');
+    const checkbox = document.getElementById('showThoughtCheckbox');
+    
+    if (!checkbox) return;
+    
+    const shouldShow = checkbox.checked;
+    
+    // 显示/隐藏所有思考消息
+    thoughtMessages.forEach(msg => {
+        if (msg instanceof HTMLElement) {
+            msg.style.display = shouldShow ? 'flex' : 'none';
+        }
+    });
+    
+    // 重新计算高度以适应内容变化
+    const processContent = document.getElementById('processContent');
+    if (processContent && !processContent.classList.contains('collapsed')) {
+        setTimeout(() => {
+            processContent.style.maxHeight = processContent.scrollHeight + 'px';
+        }, 10);
     }
 }
 
