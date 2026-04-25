@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 import os
 from typing import List, Optional
@@ -18,6 +19,15 @@ from src.agent.agent_core import WenQuAgent, TodoItem, set_websocket_manager
 
 # 创建 FastAPI 应用
 app = FastAPI(title="WenQu API", description="WenQu 本地 Agent 系统 API")
+
+# 添加 Permissions-Policy 中间件
+class PermissionsPolicyMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers['Permissions-Policy'] = 'unload=()'
+        return response
+
+app.add_middleware(PermissionsPolicyMiddleware)
 
 # 设置静态文件目录
 static_path = os.path.join(os.path.dirname(__file__), "static")

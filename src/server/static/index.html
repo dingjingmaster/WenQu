@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Permissions-Policy" content="unload=()">
     <title>WenQu - 本地 AI Agent 系统</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/assets/styles.css">
@@ -45,7 +46,7 @@
                             <span id="processArrow" class="arrow" onclick="toggleProcessCollapse()">▼</span>
                         </div>
                     </div>
-                    <div id="processContent" class="message-content">
+                    <div id="processContent" class="message-content collapsed">
                         <!-- 统一的消息列表 -->
                         <div id="processMessages" class="message-list"></div>
                     </div>

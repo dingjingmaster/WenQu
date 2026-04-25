@@ -689,10 +689,10 @@ function showResult(content) {
         `;
         conversationContainer.appendChild(userBubble);
         
-        // 添加分隔线
-        const divider = document.createElement('div');
-        divider.className = 'conversation-divider';
-        conversationContainer.appendChild(divider);
+        // 用户输入后添加分隔线
+        const userDivider = document.createElement('div');
+        userDivider.className = 'conversation-divider';
+        conversationContainer.appendChild(userDivider);
     }
     
     // 添加 Agent 答案气泡
@@ -706,6 +706,11 @@ function showResult(content) {
         <div class="bubble-content">${renderMarkdown(content)}</div>
     `;
     conversationContainer.appendChild(agentBubble);
+    
+    // Agent 回答后添加分隔线
+    const agentDivider = document.createElement('div');
+    agentDivider.className = 'conversation-divider';
+    conversationContainer.appendChild(agentDivider);
     
     resultSection.style.display = 'block';
     
@@ -860,6 +865,8 @@ function toggleThoughtVisibility() {
     // 查找所有思考消息
     const thoughtMessages = document.querySelectorAll('.process-message.thought');
     const checkbox = document.getElementById('showThoughtCheckbox');
+    const processContent = document.getElementById('processContent');
+    const processArrow = document.getElementById('processArrow');
     
     if (!checkbox) return;
     
@@ -872,12 +879,23 @@ function toggleThoughtVisibility() {
         }
     });
     
-    // 重新计算高度以适应内容变化
-    const processContent = document.getElementById('processContent');
-    if (processContent && !processContent.classList.contains('collapsed')) {
-        setTimeout(() => {
-            processContent.style.maxHeight = processContent.scrollHeight + 'px';
-        }, 10);
+    // 根据复选框状态展开/折叠面板
+    if (shouldShow) {
+        // 展开面板
+        if (processContent && processContent.classList.contains('collapsed')) {
+            processContent.classList.remove('collapsed');
+            processArrow.classList.add('rotated');
+            setTimeout(() => {
+                processContent.style.maxHeight = processContent.scrollHeight + 'px';
+            }, 10);
+        }
+    } else {
+        // 折叠面板
+        if (processContent && !processContent.classList.contains('collapsed')) {
+            processContent.style.maxHeight = '0';
+            processContent.classList.add('collapsed');
+            processArrow.classList.remove('rotated');
+        }
     }
 }
 
