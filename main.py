@@ -1,8 +1,9 @@
 import os
 import asyncio
 import uvicorn
-from chainlit.utils import mount_chainlit
 from fastapi import FastAPI
+from chainlit.utils import mount_chainlit
+from src.config.WenQuConfig import getGlobalConfig
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
 
@@ -17,7 +18,15 @@ async  def main():
     await server.serve()
 
 if __name__ == "__main__":
+    # 解析配置
+    config = getGlobalConfig()
+    if not config.loadConfig():
+        print("parse config file error!")
+        exit(-1)
+
+    # 运行
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
         pass
+    exit(0)

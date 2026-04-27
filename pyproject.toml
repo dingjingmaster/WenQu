@@ -1,7 +1,17 @@
 [project]
 name = "WenQu"
 version = "0.1.0"
-description = "Add your description here"
+description = "A local agent"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "chainlit>=2.11.1",
+    "deepagents>=0.5.3",
+    "fastapi>=0.136.1",
+    "langchain>=1.2.15",
+    "langchain-openai>=1.2.1",
+    "langgraph>=1.1.9",
+    "langgraph-checkpoint-postgres>=3.0.5",
+    "psycopg>=3.3.3",
+    "psycopg2>=2.9.12",
+]
