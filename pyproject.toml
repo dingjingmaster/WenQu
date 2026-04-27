@@ -1,30 +1,7 @@
 [project]
 name = "WenQu"
 version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
 requires-python = ">=3.11"
-description = "WenQu 本地 Agent 系统"
-authors = [
-    { name = "dingjing", email = "dingjing@live.cn" },
-]
-dependencies = [
-    "fastapi>=0.136.1",
-    "langchain>=1.2.15",
-    "langserve>=0.3.3",
-]
-
-[tool.poetry.scripts]
-start = "wenqu.server:main"
-
-[dependencies]
-python = ">=3.11"
-psycopg2-binary = "^2.9.9"
-pydantic = "^2.0.0"
-fastapi = "^0.104.0"
-uvicorn = "^0.24.0"
-python-multipart = "^0.0.6"
-requests = "^2.31.0"
-
-[dev-dependencies]
-pytest = "^7.4.0"
-black = "^23.11.0"
-flake8 = "^6.1.0"
+dependencies = []
