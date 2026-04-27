@@ -5,6 +5,11 @@ description = "WenQu 本地 Agent 系统"
 authors = [
     { name = "dingjing", email = "dingjing@live.cn" },
 ]
+dependencies = [
+    "fastapi>=0.136.1",
+    "langchain>=1.2.15",
+    "langserve>=0.3.3",
+]
 
 [tool.poetry.scripts]
 start = "wenqu.server:main"

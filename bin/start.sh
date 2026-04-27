@@ -37,7 +37,8 @@ echo ""
 
 # 检查 llama-server 是否运行
 echo "检查 llama-server 服务状态..."
-if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+pidof llama-server >/dev/null 2>&1
+if [ $? -eq 0 ]; then
     echo "✓ llama-server 服务运行正常"
 else
     echo "⚠ 警告：llama-server 服务未运行，请确保已启动 llama-server"
@@ -56,9 +57,7 @@ echo ""
 
 # 启动服务器
 echo "启动 WenQu 服务器..."
-echo "服务器地址：http://localhost:8000"
-echo "API 文档：http://localhost:8000/docs"
 echo ""
 
 # 使用 uvicorn 启动，支持自动重载和更好的性能
-uvicorn src.server.main:app --host 0.0.0.0 --port 8000
+#uvicorn src.server.main:app --host 0.0.0.0 --port 8000
