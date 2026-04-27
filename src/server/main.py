@@ -13,10 +13,14 @@ async def web_message (msg: cl.Message):
     sessionId = cl.context.session.id
     agent = WenQuAgent(sessionId)
     question: str = str(msg.content)
-    # out = cl.Message(content="")
-    # res = agent.chat(question)
-    # async for chunk in res:
-    #     await out.stream_token(str(chunk))
-    # await out.send()
-    await cl.Message(content=agent.chatAsync(question)).send()
+
+    # 同步
+    # await cl.Message(content=agent.chatAsync(question)).send()
+
+    # 异步
+    out = cl.Message(content="")
+    res = agent.chatSync(question)
+    async for chunk in res:
+        await out.stream_token(str(chunk))
+    await out.send()
 

@@ -13,61 +13,7 @@ from langchain.agents.middleware import SummarizationMiddleware
 
 dbName = "WenQu"
 sessionDBUrl = "postgresql://postgres@127.0.0.1:5432/WenQu?sslmode=disable"
-
-
-def createDB():
-    url = urlparse(sessionDBUrl)
-    admin_db = "postgres"
-    conn = psycopg2.connect(
-        dbname=admin_db,
-        user=url.username,
-        password=url.password,
-        host=url.hostname,
-        port=url.port,
-    )
-    conn.autocommit = True
-    cur = conn.cursor()
-    cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (dbName,))
-    exists = cur.fetchone()
-    if not exists:
-        cur.execute(f'CREATE DATABASE "{dbName}"')
-    cur.close()
-    conn.close()
-
-
-class WenQuAgent(object):
-    def __init__(self, sessionId: str):
-        createDB()
-        os.environ["OPENAI_API_KEY"] = "sk-local"
-        self._config = getGlobalConfig()
-        self._sessionId = sessionId
-        self._tools = []
-        print("sessionId: " + sessionId)
-        self._agentConfig : RunnableConfig = {"configurable" : {"thread_id" : sessionId}}
-        self._masterAgent = ChatOpenAI(
-            model='WenQuAgent',
-            base_url=self._config.getMainLlmUrl(),
-            max_retries=99,
-            timeout=200,
-            streaming=False,
-        )
-        self._middleware = [
-            SummarizationMiddleware(model=self._masterAgent,
-                                    max_summary_tokens=200,
-                                    max_tokens_before_summary=409600)
-        ]
-        self._subagents = [
-            self._masterAgent
-        ]
-    def chatAsync(self, question: str):
-        with PostgresSaver.from_conn_string(sessionDBUrl) as conn:
-            conn.setup()
-            agent = create_deep_agent(
-                model=self._masterAgent,
-                tools=self._tools,
-                middleware=self._middleware,
-                checkpointer=conn,
-                system_prompt='''
+systemPrompt ='''
 You are a helpful, accurate, and reliable AI assistant.
 
 # 🈯 语言要求（强制）
@@ -115,6 +61,60 @@ You are a helpful, accurate, and reliable AI assistant.
 - 不要啰嗦，不要重复强调同一信息。
 - 不要使用英文作为默认回答语言。
                 '''
+
+def createDB():
+    url = urlparse(sessionDBUrl)
+    admin_db = "postgres"
+    conn = psycopg2.connect(
+        dbname=admin_db,
+        user=url.username,
+        password=url.password,
+        host=url.hostname,
+        port=url.port,
+    )
+    conn.autocommit = True
+    cur = conn.cursor()
+    cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (dbName,))
+    exists = cur.fetchone()
+    if not exists:
+        cur.execute(f'CREATE DATABASE "{dbName}"')
+    cur.close()
+    conn.close()
+
+
+class WenQuAgent(object):
+    def __init__(self, sessionId: str):
+        createDB()
+        os.environ["OPENAI_API_KEY"] = "sk-local"
+        self._config = getGlobalConfig()
+        self._sessionId = sessionId
+        self._tools = []
+        print("sessionId: " + sessionId)
+        self._agentConfig : RunnableConfig = {"configurable" : {"thread_id" : sessionId}}
+        self._masterAgent = ChatOpenAI(
+            model='WenQuAgent',
+            base_url=self._config.getMainLlmUrl(),
+            max_retries=99,
+            timeout=200,
+            streaming=True,
+        )
+        self._middleware = [
+            SummarizationMiddleware(model=self._masterAgent,
+                                    max_summary_tokens=200,
+                                    max_tokens_before_summary=409600)
+        ]
+        self._subagents = {
+            "main": self._masterAgent,
+        }
+    def chatAsync(self, question: str):
+        with PostgresSaver.from_conn_string(sessionDBUrl) as conn:
+            conn.setup()
+            agent = create_deep_agent(
+                model=self._masterAgent,
+                tools=self._tools,
+                middleware=self._middleware,
+                checkpointer=conn,
+                system_prompt=systemPrompt
             )
             try:
                 res = agent.invoke(
@@ -134,26 +134,50 @@ You are a helpful, accurate, and reliable AI assistant.
                 return "Error: " + str(e)
 
 
-    # async def chat(self, question:str):
-    #     def run():
-    #         with PostgresSaver.from_conn_string(sessionDBUrl) as conn:
-    #             conn.setup()
-    #             agent = create_deep_agent(
-    #                 model=self._masterAgent,
-    #                 tools=self._tools,
-    #                 middleware=self._middleware,
-    #                 checkpointer=conn
-    #             )
-    #             return list(
-    #                 # {"messages": [{"role": "user", "content": question}]},
-    #                 agent.stream(
-    #                     {"input": question},
-    #                     stream_mode="updates",
-    #                     subgraphs=True,
-    #                     version="v2",
-    #                     config=self._agentConfig,
-    #                 )
-    #             )
-    #     result = await asyncio.to_thread(run)
-    #     for chunk in result:
-    #         yield chunk
+    async def chatSync(self, question:str):
+        with PostgresSaver.from_conn_string(sessionDBUrl) as conn:
+            conn.setup()
+            agent = create_deep_agent(
+                    model=self._masterAgent,
+                    tools=self._tools,
+                    middleware=self._middleware,
+                    checkpointer=conn,
+                    system_prompt=systemPrompt
+            )
+            for chunk in agent.stream(
+                    {
+                            "messages": [
+                                HumanMessage(
+                                    content=question,
+                                )
+                            ]
+                        },
+                        stream_mode="updates",
+                        subgraphs=True,
+                        version="v2",
+                        config=self._agentConfig,
+
+                    ):
+                if not chunk:
+                    continue
+                '''
+                nodeName:
+                    - type: 事件类型(这次流的是什么)
+                    - ns: namespace(事件来自哪个节点/步骤/子图)
+                    - data: 实际内容(token/message/state更新)
+                nodeData:
+                    - type: --> updates
+                    - ns: --> ()
+                    - data: --> dict{}
+                '''
+                for nodeName, nodeData in chunk.items():
+                    if nodeName == 'data':
+                        print("1:" + str(nodeData))
+                        if 'model' in nodeData:
+                            modelData = nodeData['model']
+                            print(modelData)
+                            if 'messages' in modelData:
+                                modelMessages = modelData['messages'][-1]
+                                if hasattr(modelMessages, "content"):
+                                    yield modelMessages.content
+        pass
