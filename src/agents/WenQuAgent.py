@@ -42,6 +42,7 @@ class WenQuAgent(object):
         self._config = getGlobalConfig()
         self._sessionId = sessionId
         self._tools = []
+        print("sessionId: " + sessionId)
         self._agentConfig : RunnableConfig = {"configurable" : {"thread_id" : sessionId}}
         self._masterAgent = ChatOpenAI(
             model='WenQuAgent',

@@ -6,11 +6,12 @@ from src.agents.WenQuAgent import WenQuAgent
 
 @cl.on_chat_start
 async def web_root():
-    await cl.Message(content='Welcome to use WenQu Local Agent.').send()
+    await cl.Message(content='欢迎使用 WenQu 本地大语言模型.').send()
 
 @cl.on_message
 async def web_message (msg: cl.Message):
-    agent = WenQuAgent(msg.id)
+    sessionId = cl.context.session.id
+    agent = WenQuAgent(sessionId)
     question: str = str(msg.content)
     # out = cl.Message(content="")
     # res = agent.chat(question)
