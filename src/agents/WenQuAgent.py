@@ -1,9 +1,12 @@
 import os
-import asyncio
+
+import langchain_core
 import psycopg2
+import chainlit as cl
 from urllib.parse import urlparse
 
 from langchain_core.messages import HumanMessage
+from langchain_core.tracers import langchain
 from langchain_openai import ChatOpenAI
 from deepagents import create_deep_agent
 from src.config.WenQuConfig import getGlobalConfig
@@ -14,10 +17,10 @@ from langchain.agents.middleware import SummarizationMiddleware
 dbName = "WenQu"
 sessionDBUrl = "postgresql://postgres@127.0.0.1:5432/WenQu?sslmode=disable"
 systemPrompt ='''
-You are a helpful, accurate, and reliable AI assistant.
+你是一位乐于助人、准确无误且值得信赖的智能助手。
 
 # 🈯 语言要求（强制）
-- 你必须始终使用【中文】回复用户。
+- 你必须始终使用【中文】回复用户(包括你的思考过程)。
 - 不允许使用英文回答正文内容。
 - 专有名词可以保留英文（如 API 名称、代码、函数名），但解释必须是中文。
 - 如果用户使用其他语言提问，也必须用中文回答。
@@ -86,6 +89,8 @@ class WenQuAgent(object):
     def __init__(self, sessionId: str):
         createDB()
         os.environ["OPENAI_API_KEY"] = "sk-local"
+        self._cmdStep = cl.Step(name="工具📌")
+        self._outBuffer = cl.Message(content="")
         self._config = getGlobalConfig()
         self._sessionId = sessionId
         self._tools = []
@@ -106,6 +111,14 @@ class WenQuAgent(object):
         self._subagents = {
             "main": self._masterAgent,
         }
+    async def _updateCmdStep(self, msg : str):
+        self._cmdStep.output = msg
+        await self._cmdStep.send()
+        await self._cmdStep.update()
+
+    async def _updateOutBuffer(self, chunk: str):
+        await self._outBuffer.stream_token(str(chunk))
+
     def chatAsync(self, question: str):
         with PostgresSaver.from_conn_string(sessionDBUrl) as conn:
             conn.setup()
@@ -133,6 +146,37 @@ class WenQuAgent(object):
             except Exception as e:
                 return "Error: " + str(e)
 
+    async def waitFinished(self):
+        await self._outBuffer.send()
+
+    async def _messageAsync(self, msg : langchain_core.messages.ai.AIMessage):
+        if not isinstance(msg, langchain_core.messages.ai.AIMessage):
+            return
+        if hasattr(msg, "content"):
+            if 'tool_calls' in msg:
+                cmdCalls = msg.tool_calls
+                cmd = ''
+                for c in cmdCalls:
+                    print("==>" + str(c))
+                    if 'name' in c:
+                        cmd += '命令：' + str(c['name'])
+                        continue
+                    elif 'args' in c:
+                        cmd += '参数： ' + str(' '.join(c['args']))
+                        continue
+                    cmd += '\n'
+                if '' != cmd:
+                    await self._updateCmdStep(cmd)
+            await self._updateOutBuffer(str(msg.content))
+    async def _messageCommand(self, msgs : list):
+        toolsNames = []
+        if isinstance(msgs, list):
+            for t in msgs:
+                if hasattr(t, "name") and hasattr(t, "content") and len(t.content) > 0:
+                    msg = "%s %s\n" % (t.name, ' '.join(t.content))
+                    toolsNames.append(msg)
+        if len(toolsNames) > 0:
+            await self._updateCmdStep('命令: %s' % (', '.join(toolsNames)))
 
     async def chatSync(self, question:str):
         with PostgresSaver.from_conn_string(sessionDBUrl) as conn:
@@ -172,12 +216,26 @@ class WenQuAgent(object):
                 '''
                 for nodeName, nodeData in chunk.items():
                     if nodeName == 'data':
-                        print("1:" + str(nodeData))
                         if 'model' in nodeData:
                             modelData = nodeData['model']
-                            print(modelData)
                             if 'messages' in modelData:
-                                modelMessages = modelData['messages'][-1]
-                                if hasattr(modelMessages, "content"):
-                                    yield modelMessages.content
+                                for msg in modelData['messages']:
+                                    print(type(msg))
+                                    await self._messageAsync(msg)
+                            else:
+                                # print(nodeData)
+                                # print("\n")
+                                pass
+                        elif 'tools' in nodeData:
+                            tools = nodeData['tools']
+                            if 'messages' in tools:
+                                await self._messageCommand(tools['messages'])
+                        else:
+                            # print(nodeData)
+                            # print("\n")
+                            pass
+                    else:
+                        # print(nodeData)
+                        # print("\n")
+                        pass
         pass

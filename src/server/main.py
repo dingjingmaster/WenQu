@@ -18,9 +18,6 @@ async def web_message (msg: cl.Message):
     # await cl.Message(content=agent.chatAsync(question)).send()
 
     # 异步
-    out = cl.Message(content="")
-    res = agent.chatSync(question)
-    async for chunk in res:
-        await out.stream_token(str(chunk))
-    await out.send()
+    await agent.chatSync(question)
+    await agent.waitFinished()
 
